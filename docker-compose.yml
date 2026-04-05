@@ -1,0 +1,22 @@
+services:
+  carikopiweb:
+    build: .
+    image: carikopi-fe:latest
+    container_name: carikopi-fe
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - NODE_ENV=production
+
+
+  carikopiwebtunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: carikopiweb-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=eyJhIjoiZjUzZTYyZjFkZGExZDZiNGViYWY2ODc0MGFlNThhNDgiLCJ0IjoiMzJjNWRiOTEtYmVjMS00NjIyLWE3ZmEtN2M2ZmVmNjFiMDVjIiwicyI6Ik9URTNNRE01TXprdE9XTXpZeTAwT0daaExUZ3pPV0V0WldFME9HTTBNV1V6TkRCbCJ9
+    depends_on:
+      - carikopiweb
