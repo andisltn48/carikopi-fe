@@ -37,6 +37,33 @@ interface MenuItemPublic {
   foto: FotoItem[];
 }
 
+interface CartItem {
+  menu: MenuItemPublic;
+  quantity: number;
+  notes: string;
+}
+
+interface OrderMenu {
+  id: string;
+  menu: {
+    nama: string;
+    harga: number;
+  };
+  quantity: number;
+  totalPrice: number;
+  notes: string;
+}
+
+interface PastOrder {
+  id: string;
+  name: string;
+  orderNumber: string;
+  status: string;
+  totalPrice: number;
+  createdAt: string;
+  orderMenus: OrderMenu[];
+}
+
 function formatRupiah(value: number): string {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 }
@@ -95,6 +122,113 @@ export default function ShopDetailPage() {
   const [lightboxFotos, setLightboxFotos] = useState<FotoItem[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  // Cart & Order
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [customerForm, setCustomerForm] = useState({ name: '', phone: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [menuSearchQuery, setMenuSearchQuery] = useState('');
+
+  // Past Orders
+  const [pastOrders, setPastOrders] = useState<PastOrder[]>([]);
+  const [isOrdersOpen, setIsOrdersOpen] = useState(false);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+
+  const fetchPastOrders = async () => {
+    const session = localStorage.getItem('unique_session');
+    if (!session || !shopId) return;
+    
+    setIsLoadingOrders(true);
+    try {
+      const res = await fetch(`/api/public/orders/get-by-unique-session/${session}/${shopId}`);
+      const data = await res.json();
+      if (res.ok && data.code === 200 && data.data) {
+        setPastOrders(data.data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch past orders', e);
+    }
+    setIsLoadingOrders(false);
+  };
+
+  const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = cart.reduce((acc, item) => acc + (item.quantity * item.menu.harga), 0);
+
+  const addToCart = (menu: MenuItemPublic) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.menu.id === menu.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.menu.id === menu.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prev, { menu, quantity: 1, notes: '' }];
+    });
+  };
+
+  const updateCartItem = (menuId: string, updates: Partial<CartItem>) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.menu.id === menuId ? { ...item, ...updates } : item
+      )
+    );
+  };
+
+  const removeFromCart = (menuId: string) => {
+    setCart((prev) => prev.filter((item) => item.menu.id !== menuId));
+  };
+
+  const submitOrder = async () => {
+    if (!customerForm.name || !customerForm.phone) {
+      alert('Nama dan Nomor HP wajib diisi!');
+      return;
+    }
+    if (cart.length === 0) return;
+
+    setIsSubmitting(true);
+    let session = localStorage.getItem('unique_session');
+    if (!session) {
+      session = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      localStorage.setItem('unique_session', session);
+      localStorage.setItem('unique_session_expiry', (Date.now() + 24 * 60 * 60 * 1000).toString());
+    }
+
+    const payload = {
+      name: customerForm.name,
+      phone: customerForm.phone,
+      total_price: totalPrice,
+      shop_id: shopId,
+      unique_session: session,
+      order_menus: cart.map((item) => ({
+        menu_id: item.menu.id,
+        quantity: item.quantity,
+        total_price: item.quantity * item.menu.harga,
+        notes: item.notes
+      }))
+    };
+
+    try {
+      const res = await fetch('/api/public/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'OK') {
+        alert('Pesanan berhasil dibuat!');
+        setCart([]);
+        setIsCartOpen(false);
+        setCustomerForm({ name: '', phone: '' });
+        fetchPastOrders();
+      } else {
+        alert('Gagal membuat pesanan: ' + (data.message || 'Error tidak diketahui'));
+      }
+    } catch {
+      alert('Terjadi kesalahan jaringan saat membuat pesanan.');
+    }
+    setIsSubmitting(false);
+  };
+
   useEffect(() => {
     if (!shopId) return;
 
@@ -119,6 +253,9 @@ export default function ShopDetailPage() {
         if (menuBody.status === 'OK' && menuBody.data) {
           setMenus(menuBody.data);
         }
+
+        // Ambil riwayat pesanan (async background)
+        fetchPastOrders();
       } catch {
         setError('Gagal memuat data coffee shop.');
       }
@@ -159,6 +296,10 @@ export default function ShopDetailPage() {
   }
 
   const tags = shop.tags ? shop.tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
+
+  const filteredMenus = menus.filter((menu) => 
+    menu.nama.toLowerCase().includes(menuSearchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -302,13 +443,25 @@ export default function ShopDetailPage() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl md:text-2xl font-bold text-foreground">
             Menu
-            {menus.length > 0 && (
-              <span className="ml-2 text-sm font-normal text-muted-foreground">({menus.length} item)</span>
+            {filteredMenus.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">({filteredMenus.length} item)</span>
             )}
           </h2>
         </div>
 
-        {menus.length === 0 ? (
+        {/* Menu Search Field */}
+        <div className="mb-6 relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input
+            type="text"
+            placeholder="Cari nama menu..."
+            value={menuSearchQuery}
+            onChange={(e) => setMenuSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-border/60 rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm text-foreground transition-all"
+          />
+        </div>
+
+        {filteredMenus.length === 0 ? (
           <div className="bg-card rounded-2xl border border-border/60 p-10 text-center">
             <div className="w-14 h-14 rounded-2xl bg-brown-100 flex items-center justify-center mx-auto mb-4">
               <svg className="w-7 h-7 text-brown-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -316,11 +469,13 @@ export default function ShopDetailPage() {
                 <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
               </svg>
             </div>
-            <p className="text-muted-foreground text-sm">Belum ada menu yang tersedia.</p>
+            <p className="text-muted-foreground text-sm">
+              {menuSearchQuery ? 'Menu tidak ditemukan.' : 'Belum ada menu yang tersedia.'}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {menus.map((menu) => {
+            {filteredMenus.map((menu) => {
               const thumb = menu.foto?.[0];
               return (
                 <div key={menu.id} className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden hover:shadow-md transition-shadow duration-200">
@@ -375,6 +530,18 @@ export default function ShopDetailPage() {
                         ))}
                       </div>
                     )}
+
+                    {/* Add to Cart button */}
+                    <div className="pt-2">
+                       <button
+                         onClick={() => addToCart(menu)}
+                         className="w-full py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm flex items-center justify-center gap-2"
+                       >
+                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
+                         Tambah ke Keranjang
+                       </button>
+                    </div>
+
                   </div>
                 </div>
               );
@@ -401,6 +568,209 @@ export default function ShopDetailPage() {
       {/* Lightbox */}
       {lightboxFotos && (
         <Lightbox fotos={lightboxFotos} startIndex={lightboxIndex} onClose={() => setLightboxFotos(null)} />
+      )}
+
+      {/* Floating Buttons: Cart & Past Orders */}
+      {(totalItems > 0 || pastOrders.length > 0) && !isCartOpen && !isOrdersOpen && (
+        <div className="fixed bottom-6 inset-x-0 mx-auto w-fit z-40 animate-in slide-in-from-bottom-5 flex items-center gap-3">
+          {totalItems > 0 && (
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="flex items-center gap-3 px-6 py-3.5 bg-primary text-primary-foreground rounded-full font-medium shadow-2xl hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all w-fit"
+            >
+              <div className="relative">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                  {totalItems}
+                </span>
+              </div>
+              <span>{formatRupiah(totalPrice)}</span>
+            </button>
+          )}
+
+          {pastOrders.length > 0 && (
+            <button
+              onClick={() => setIsOrdersOpen(true)}
+              className="flex items-center gap-2 px-6 py-3.5 bg-yellow-600 text-white rounded-full font-medium shadow-2xl hover:bg-yellow-700 hover:scale-105 active:scale-95 transition-all w-fit"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span>Pesanan Saya ({pastOrders.length})</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Past Orders Modal */}
+      {isOrdersOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm" onClick={() => setIsOrdersOpen(false)}>
+          <div className="w-full max-w-md h-full bg-background shadow-2xl flex flex-col animate-in slide-in-from-right" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between bg-card text-foreground">
+              <h2 className="text-lg font-bold">Riwayat Pesanan</h2>
+              <button onClick={() => setIsOrdersOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5 bg-muted/20">
+              {isLoadingOrders ? (
+                <div className="flex justify-center p-10">
+                  <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                </div>
+              ) : pastOrders.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-10">Belum ada riwayat pesanan.</p>
+              ) : (
+                pastOrders.map((order) => (
+                  <div key={order.id} className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm">
+                    <div className="px-4 py-3 border-b border-border/60 bg-muted/30 flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">{order.orderNumber}</p>
+                        <p className="text-xs text-muted-foreground">
+                           {new Date(order.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </p>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                        order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                        order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </div>
+                    
+                    <div className="p-4 space-y-3">
+                      <div className="space-y-2">
+                        {order.orderMenus.map((item) => (
+                          <div key={item.id} className="flex justify-between items-start gap-4">
+                            <div className="flex-1 min-w-0">
+                               <p className="text-sm font-medium text-foreground line-clamp-1">{item.quantity}x {item.menu.nama}</p>
+                               {item.notes && <p className="text-xs text-muted-foreground mt-0.5">Catatan: {item.notes}</p>}
+                            </div>
+                            <p className="text-sm font-medium shrink-0">{formatRupiah(item.totalPrice)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="px-4 py-3 bg-muted/10 flex justify-between items-center border-t border-border/60">
+                       <span className="text-sm font-semibold text-foreground">Total</span>
+                       <span className="text-sm font-bold text-primary">{formatRupiah(order.totalPrice)}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Modal */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}>
+          <div className="w-full max-w-md h-full bg-background shadow-2xl flex flex-col animate-in slide-in-from-right" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between bg-card text-foreground">
+              <h2 className="text-lg font-bold">Keranjang Pesanan ({totalItems})</h2>
+              <button onClick={() => setIsCartOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+              {/* Cart Items */}
+              <div className="space-y-4">
+                {cart.map((item) => (
+                  <div key={item.menu.id} className="flex gap-4 p-3 bg-muted/50 rounded-xl border border-border/40">
+                    <div className="w-16 h-16 rounded-lg bg-border flex-shrink-0 overflow-hidden">
+                      {item.menu.foto?.[0] ? (
+                        <img src={item.menu.foto[0].url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-brown-100 text-lg">☕</div>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-semibold text-sm line-clamp-1 pr-2 text-foreground">{item.menu.nama}</h4>
+                        <button onClick={() => removeFromCart(item.menu.id)} className="text-red-500 hover:text-red-700 flex-shrink-0">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                      </div>
+                      <p className="text-primary font-medium text-sm">{formatRupiah(item.menu.harga)}</p>
+                      <div className="flex flex-col gap-2 pt-2">
+                        <div className="flex items-center border rounded-lg overflow-hidden bg-background w-fit">
+                          <button
+                            onClick={() => updateCartItem(item.menu.id, { quantity: Math.max(1, item.quantity - 1) })}
+                            className="w-7 h-7 flex items-center justify-center hover:bg-muted font-medium text-foreground"
+                          >
+                            -
+                          </button>
+                          <span className="w-8 text-center text-sm font-medium text-foreground">{item.quantity}</span>
+                          <button
+                            onClick={() => updateCartItem(item.menu.id, { quantity: item.quantity + 1 })}
+                            className="w-7 h-7 flex items-center justify-center hover:bg-muted font-medium text-foreground"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <input 
+                          type="text" 
+                          placeholder="Catatan (opsional)..."
+                          value={item.notes}
+                          onChange={(e) => updateCartItem(item.menu.id, { notes: e.target.value })}
+                          className="w-full text-xs px-2.5 py-2 rounded-md border border-border/60 bg-background focus:outline-none focus:border-primary/50 text-foreground"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Customer Form */}
+              <div className="space-y-3 pt-4 border-t border-border/60 bg-transparent">
+                <h3 className="font-semibold text-sm text-foreground">Informasi Pemesan</h3>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1">Nama Pemesan</label>
+                  <input 
+                    type="text" 
+                    value={customerForm.name}
+                    onChange={(e) => setCustomerForm({...customerForm, name: e.target.value})}
+                    placeholder="Contoh: Budi"
+                    className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-foreground bg-background"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1">No. WhatsApp/HP</label>
+                  <input 
+                    type="tel" 
+                    value={customerForm.phone}
+                    onChange={(e) => setCustomerForm({...customerForm, phone: e.target.value})}
+                    placeholder="Contoh: 08123456789"
+                    className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-foreground bg-background"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-border/60 bg-muted/30">
+              <div className="flex justify-between items-center mb-4">
+                <span className="font-semibold text-foreground">Total Tagihan</span>
+                <span className="text-xl font-bold text-primary">{formatRupiah(totalPrice)}</span>
+              </div>
+              <button 
+                onClick={submitOrder}
+                disabled={isSubmitting || cart.length === 0}
+                className="w-full py-3.5 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 transition-all"
+              >
+                {isSubmitting ? (
+                   <>
+                     <div className="w-4 h-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />
+                     Memproses...
+                   </>
+                ) : (
+                  'Konfirmasi Pesanan'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

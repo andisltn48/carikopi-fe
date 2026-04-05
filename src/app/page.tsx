@@ -117,6 +117,24 @@ export default function LandingPage() {
   };
 
   useEffect(() => {
+    // Generate unique session for public users
+    const sessionKey = 'unique_session';
+    const expirationKey = 'unique_session_expiry';
+    const now = new Date().getTime();
+    
+    const currentSession = localStorage.getItem(sessionKey);
+    const expiryDate = localStorage.getItem(expirationKey);
+
+    if (!currentSession || !expiryDate || now > parseInt(expiryDate, 10)) {
+      const newSession = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      const newExpiry = now + 24 * 60 * 60 * 1000; // 24 hours
+      
+      localStorage.setItem(sessionKey, newSession);
+      localStorage.setItem(expirationKey, newExpiry.toString());
+    }
+  }, []);
+
+  useEffect(() => {
     handleFindNearby();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
