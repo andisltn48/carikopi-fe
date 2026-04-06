@@ -45,6 +45,28 @@ export default function MapPicker({ latitude, longitude, onChange }: MapPickerPr
     if (latitude && longitude) {
       const marker = L.marker([latitude, longitude], { icon: defaultIcon }).addTo(map);
       markerRef.current = marker;
+    } else {
+      // Get user's current location if no coordinates provided
+      if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude: userLat, longitude: userLng } = position.coords;
+            map.flyTo([userLat, userLng], 15);
+            
+            // Auto-place marker at user's current location
+            if (!markerRef.current) {
+              markerRef.current = L.marker([userLat, userLng], { icon: defaultIcon }).addTo(map);
+            } else {
+              markerRef.current.setLatLng([userLat, userLng]);
+            }
+            onChange(userLat, userLng);
+          },
+          (error) => {
+            console.error('Error getting geolocation:', error);
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+      }
     }
 
     // Click handler
