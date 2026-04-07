@@ -364,6 +364,18 @@ export const orderApi = {
       headers: createAuthHeaders(token),
     });
   },
+
+  getByOrderId: (token: string, orderId: string) => {
+    return request<Order>(`/api/orders/get-by-order-id/${orderId}`, {
+      headers: createAuthHeaders(token),
+    });
+  },
+
+  updateStatus: (token: string, orderId: string, status: string) => {
+    return request<Order>(`/api/orders/update-status/${orderId}/${status}`, {
+      headers: createAuthHeaders(token),
+    });
+  },
 };
 
 export { request, API_BASE_URL };

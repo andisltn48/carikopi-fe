@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { coffeeshopApi, orderApi, type Order, type Paging } from '@/lib/api';
+import Link from 'next/link';
 
 export default function OrdersPage() {
   const { token } = useAuth();
@@ -50,7 +51,11 @@ export default function OrdersPage() {
 
   // Initial shop ID fetch
   useEffect(() => {
-    if (!token) return;
+    // If token is definitely not coming (auth finished loading), stop loading
+    if (!token) {
+      // We don't set isLoading(false) here yet to give AuthContext a chance to load
+      return;
+    }
 
     const init = async () => {
       const shopResult = await coffeeshopApi.getMine(token);
@@ -150,14 +155,15 @@ export default function OrdersPage() {
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total</th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waktu</th>
+                <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {orders.length > 0 ? (
                 orders.map((order) => (
                   <tr key={order.id} className="hover:bg-secondary/30 transition-colors group">
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-mono font-medium text-foreground">{order.order_number}</span>
+                    <td className="px-6 py-4 font-mono text-xs font-medium text-foreground">
+                      {order.order_number}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
@@ -166,16 +172,15 @@ export default function OrdersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="space-y-1">
+                      <div className="flex flex-col gap-0.5 max-w-[200px]">
                         {order.order_menus.map((item, idx) => (
-                          <div key={idx} className="text-sm text-foreground flex items-center gap-2">
-                            <span className="font-medium">{item.quantity}x</span>
-                            <span>{item.menu.nama}</span>
-                            {item.notes && (
-                              <span className="text-xs text-muted-foreground italic">({item.notes})</span>
-                            )}
+                          <div key={idx} className="text-xs text-foreground truncate">
+                            {item.quantity}x {item.menu.nama}
                           </div>
                         ))}
+                        {order.order_menus.length > 2 && (
+                          <span className="text-[10px] text-muted-foreground">+{order.order_menus.length - 2} menu lainnya</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -183,12 +188,12 @@ export default function OrdersPage() {
                         Rp {order.total_price.toLocaleString('id-ID')}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${getStatusColor(order.status)}`}>
+                    <td className="px-6 py-4 text-xs font-medium">
+                      <span className={`px-2 py-0.5 rounded-full border ${getStatusColor(order.status)}`}>
                         {order.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">
+                    <td className="px-6 py-4 text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(order.created_at).toLocaleString('id-ID', {
                         day: '2-digit',
                         month: 'short',
@@ -196,11 +201,23 @@ export default function OrdersPage() {
                         minute: '2-digit'
                       })}
                     </td>
+                    <td className="px-6 py-4 text-right">
+                      <Link
+                        href={`/dashboard/orders/${order.id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground text-xs font-bold rounded-lg transition-all duration-200"
+                      >
+                        Detail
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 12h14"></path>
+                          <path d="m12 5 7 7-7 7"></path>
+                        </svg>
+                      </Link>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground text-sm italic">
+                  <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground text-sm italic">
                     {isLoading ? 'Sedang memuat...' : 'Tidak ada pesanan ditemukan.'}
                   </td>
                 </tr>
