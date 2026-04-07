@@ -1,10 +1,17 @@
 // Requests go to same origin — Next.js rewrites proxy /api/* to the backend
 const API_BASE_URL = '';
 
+export interface Paging {
+  currentPage: number;
+  totalPage: number;
+  size: number;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   message?: string;
+  paging?: Paging;
 }
 
 export interface LoginResponse {
@@ -28,6 +35,7 @@ interface BackendResponse<T> {
   data: T | null;
   errors: string | null;
   status: string;
+  paging?: Paging;
 }
 
 async function request<T>(
@@ -67,6 +75,7 @@ async function request<T>(
     return {
       success: true,
       data: body.data ?? undefined,
+      paging: body.paging,
     };
   } catch (error) {
     return {
@@ -311,6 +320,49 @@ export const menuApi = {
     } catch (error) {
       return { success: false, message: error instanceof Error ? error.message : 'Network error' };
     }
+  },
+};
+
+// ── Order Types ──
+
+export interface OrderMenu {
+  menu: {
+    id: string;
+    nama: string;
+    harga: number;
+    deskripsi: string;
+    foto: MenuFoto[] | null;
+  };
+  quantity: number;
+  total_price: number;
+  notes: string;
+}
+
+export interface Order {
+  id: string;
+  name: string;
+  phone: string;
+  total_price: number;
+  order_menus: OrderMenu[];
+  status: string;
+  payment_status: string | null;
+  payment_method: string | null;
+  order_number: string;
+  created_at: string;
+}
+
+export const orderApi = {
+  getByShopId: (token: string, shopId: string, params?: { orderNumber?: string; page?: number; size?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.orderNumber) searchParams.append('order_number', params.orderNumber);
+    if (params?.page !== undefined) searchParams.append('page', params.page.toString());
+    if (params?.size !== undefined) searchParams.append('size', params.size.toString());
+
+    const query = searchParams.toString();
+    const url = `/api/orders/get-by-shop-id/${shopId}${query ? `?${query}` : ''}`;
+    return request<Order[]>(url, {
+      headers: createAuthHeaders(token),
+    });
   },
 };
 
