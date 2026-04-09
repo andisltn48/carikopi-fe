@@ -1,36 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  /* Coffee color palette */
-  --brown-50: #faf6f1;
-  --brown-100: #f0e6d6;
-  --brown-200: #e0cbad;
-  --brown-300: #cba87a;
-  --brown-400: #b8894f;
-  --brown-500: #a67340;
-  --brown-600: #8c5c35;
-  --brown-700: #6e4529;
-  --brown-800: #5a3823;
-  --brown-900: #4a2f1e;
-  --brown-950: #2a1810;
+  /* Premium Coffee Palette */
+  --primary: #553722;
+  --primary-container: #6f4e37;
+  --secondary-container: #fdcb9b;
+  --tertiary: #31422b;
+  --background: #fcf9f4;
+  --on-background: #1c1c19;
+  --surface: #fcf9f4;
+  --on-surface: #1c1c19;
+  --on-surface-variant: #50453e;
+  --surface-container: #f0ede8;
+  --surface-container-low: #f6f3ee;
+  --surface-variant: #e5e2dd;
+  --on-surface-variant-50: rgba(80, 69, 62, 0.5);
+  --outline: #82746d;
+  --outline-variant: #d4c3ba;
 
-  /* Semantic tokens */
-  --background: #faf6f1;
-  --foreground: #2a1810;
+  /* Legacy Compat/Tokens */
+  --foreground: var(--on-background);
   --card: #ffffff;
-  --card-foreground: #2a1810;
-  --primary: #6e4529;
+  --card-foreground: var(--on-surface);
   --primary-foreground: #ffffff;
-  --secondary: #f0e6d6;
-  --secondary-foreground: #4a2f1e;
-  --muted: #f0e6d6;
-  --muted-foreground: #8c5c35;
-  --accent: #a67340;
-  --accent-foreground: #ffffff;
-  --border: #e0cbad;
-  --input: #e0cbad;
-  --ring: #6e4529;
-  --destructive: #dc2626;
+  --secondary: #ffdcbd;
+  --secondary-foreground: #2c1600;
+  --muted: #f0ede8;
+  --muted-foreground: #82746d;
+  --accent: #fdcb9b;
+  --accent-foreground: #2c1600;
+  --border: #d4c3ba;
+  --input: #d4c3ba;
+  --ring: #553722;
+  --destructive: #ba1a1a;
   --destructive-foreground: #ffffff;
 }
 
@@ -71,8 +73,16 @@
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  color: var(--on-surface);
+  font-family: 'Plus Jakarta Sans', var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+.ambient-shadow {
+  box-shadow: 0 8px 32px rgba(45, 22, 4, 0.08);
+}
+
+.premium-gradient {
+  background: linear-gradient(135deg, #553722 0%, #6f4e37 100%);
 }
 
 /* Smooth focus ring */

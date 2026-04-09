@@ -73,7 +73,7 @@ export default function LandingPage() {
     setLocationError('');
     setHasSearched(true);
 
-    let url = `/api/public/coffeeshop/nearby?lat=${lat}&lng=${lng}&radiusKm=${radius}`;
+    let url = `/api/public/coffeeshop/nearby?lat=${lat}&lng=${lng}&radius=${radius}`;
     if (query && query.trim()) {
       url += `&query=${encodeURIComponent(query.trim())}`;
     }
@@ -154,373 +154,288 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#ffffff' }}>
+    <div className="min-h-screen bg-background text-on-surface font-['Plus_Jakarta_Sans']">
 
-      {/* ── Navbar ── */}
-      <nav className="sticky top-0 z-50 border-b" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderColor: 'rgba(55,53,47,0.09)' }}>
-        <div className="max-w-[1080px] mx-auto px-6 h-12 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-lg">☕</span>
-            <span className="font-semibold text-sm tracking-tight" style={{ color: '#37352f' }}>CariKopi</span>
+      {/* ── TopNavBar ── */}
+      <nav className="fixed top-0 w-full z-50 bg-white border-b border-primary/5 shadow-sm transition-colors duration-300 h-16 flex items-center">
+        <div className="flex justify-between items-center w-full px-6 md:px-12 max-w-7xl mx-auto">
+          <Link href="/" className="text-2xl font-bold text-primary tracking-tighter">
+            CariKopi
           </Link>
-          <div className="flex items-center gap-1">
-            <Link
-              href="/login"
-              className="px-3 py-1.5 text-sm rounded-md transition-colors duration-100"
-              style={{ color: '#37352f99' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(55,53,47,0.04)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              Masuk
-            </Link>
-            <Link
-              href="/register"
-              className="px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-100"
-              style={{ color: '#fff', background: '#37352f' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#5a3e28')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = '#37352f')}
-            >
-              Daftar
-            </Link>
+          <div className="hidden md:flex items-center gap-8">
+            
           </div>
+          <button 
+            onClick={handleFindNearby}
+            className="hidden md:block bg-primary text-primary-foreground px-6 py-2.5 rounded-full font-semibold text-sm premium-gradient active:scale-95 transition-transform"
+          >
+            Find Nearby
+          </button>
         </div>
       </nav>
 
-      {/* ── Hero Section ── */}
-      <section className="pt-20 pb-16 md:pt-28 md:pb-20">
-        <div className="max-w-[1080px] mx-auto px-6">
-          <div className="max-w-[720px] mx-auto text-center">
-            {/* Emoji icon */}
-            <div className="mb-6">
-              <span className="text-6xl md:text-7xl inline-block" style={{ lineHeight: 1 }}>☕</span>
-            </div>
-
-            <h1
-              className="text-4xl md:text-5xl font-bold leading-tight mb-4"
-              style={{ color: '#37352f', letterSpacing: '-0.03em' }}
-            >
-              Temukan Coffee Shop{' '}
-              <span style={{ color: '#8B5E3C' }}>Terbaik</span>{' '}
-              di Sekitarmu
-            </h1>
-
-            <p
-              className="text-lg md:text-xl mb-10 leading-relaxed"
-              style={{ color: '#37352f80', maxWidth: 520, margin: '0 auto' }}
-            >
-              Jelajahi berbagai coffee shop terdekat, lihat menu & harga, dan temukan tempat ngopi favorit barumu.
-            </p>
-
-            {/* Search CTA */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                onClick={handleFindNearby}
-                className="inline-flex items-center gap-2.5 px-6 py-3 text-sm font-medium rounded-lg transition-all duration-150 shadow-sm"
-                style={{ background: '#37352f', color: '#fff' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#5a3e28')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = '#37352f')}
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-                Cari Coffee Shop Terdekat
-              </button>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs" style={{ color: '#37352f80' }}>Radius</span>
-                <select
-                  value={searchRadius}
-                  onChange={(e) => setSearchRadius(Number(e.target.value))}
-                  className="px-2.5 py-2 text-sm rounded-lg border focus:outline-none"
-                  style={{ borderColor: 'rgba(55,53,47,0.16)', color: '#37352f', background: '#fff' }}
-                >
-                  <option value={1}>1 km</option>
-                  <option value={3}>3 km</option>
-                  <option value={5}>5 km</option>
-                  <option value={10}>10 km</option>
-                  <option value={25}>25 km</option>
-                  <option value={50}>50 km</option>
-                </select>
-              </div>
-            </div>
-
-            {locationError && (
-              <p className="text-sm mt-4" style={{ color: '#e03e3e' }}>{locationError}</p>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Divider ── */}
-      <div className="max-w-[1080px] mx-auto px-6">
-        <hr style={{ borderColor: 'rgba(55,53,47,0.09)' }} />
-      </div>
-
-      {/* ── Features Section ── */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-[1080px] mx-auto px-6">
-          <div className="max-w-[720px] mx-auto text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: '#37352f', letterSpacing: '-0.02em' }}>
-              Kenapa CariKopi?
-            </h2>
-            <p className="text-base" style={{ color: '#37352f80' }}>
-              Platform terlengkap untuk pengalaman kopi terbaikmu.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
-            {[
-              {
-                emoji: '📍',
-                title: 'Cari Berdasarkan Lokasi',
-                desc: 'Temukan coffee shop terdekat dari posisi kamu secara real-time dengan GPS.',
-              },
-              {
-                emoji: '📋',
-                title: 'Lihat Menu & Harga',
-                desc: 'Cek menu lengkap beserta harga sebelum kamu berkunjung. Transparan!',
-              },
-              {
-                emoji: '📸',
-                title: 'Foto & Detail Lengkap',
-                desc: 'Lihat foto suasana, profil toko, dan informasi detail setiap coffee shop.',
-              },
-            ].map((feature, i) => (
-              <div
-                key={i}
-                className="rounded-lg p-6 transition-colors duration-100"
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(55,53,47,0.03)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                <div className="text-3xl mb-3">{feature.emoji}</div>
-                <h3 className="text-[15px] font-semibold mb-1.5" style={{ color: '#37352f' }}>{feature.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: '#37352f80' }}>{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Divider ── */}
-      <div className="max-w-[1080px] mx-auto px-6">
-        <hr style={{ borderColor: 'rgba(55,53,47,0.09)' }} />
-      </div>
-
-      {/* ── Nearby Results Section ── */}
-      <section ref={shopsSectionRef} className="py-16 md:py-20">
-        <div className="max-w-[1080px] mx-auto px-6">
-          {isLoadingNearby && (
-            <div className="flex flex-col items-center gap-3 py-16">
-              <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(55,53,47,0.16)', borderTopColor: '#8B5E3C' }} />
-              <p className="text-sm" style={{ color: '#37352f80' }}>Mencari coffee shop di sekitarmu…</p>
-            </div>
-          )}
-
-          {hasSearched && !isLoadingNearby && (
-            <>
-              <div className="mb-8">
-                <h2 className="text-2xl md:text-3xl font-bold mb-1" style={{ color: '#37352f', letterSpacing: '-0.02em' }}>
-                  Coffee Shop Terdekat
-                </h2>
-                <p className="text-sm" style={{ color: '#37352f80' }}>
-                  {nearbyShops.length > 0
-                    ? `${nearbyShops.length} coffee shop ditemukan dalam radius ${searchRadius} km.`
-                    : `Tidak ada hasil dalam radius ${searchRadius} km. Coba perbesar radius.`}
-                </p>
-              </div>
-
-              {/* Search Bar — Notion callout style */}
-              <div
-                className="rounded-lg p-3 mb-8 flex flex-col sm:flex-row gap-2"
-                style={{ background: '#f6f5f4' }}
-              >
-                <div className="relative flex-1">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#37352f80' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                  <input
+      <main className="pt-24">
+        {/* ── Hero Section ── */}
+        <section className="relative lg:px-8 py-8 lg:py-28 max-w-7xl mx-auto overflow-hidden">
+          {/* Mobile Hero (Stacked with Background Image) */}
+          <div className="lg:hidden relative h-[420px] mx-6 rounded-3xl overflow-hidden mb-8 bg-surface-container-high shadow-lg">
+            <img 
+              alt="Artisan coffee" 
+              className="absolute inset-0 w-full h-full object-cover" 
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDb0YnRbUkkwm0Cdwviy7hq1EV7uAHZychZ6YoJZOLgazEU2Q3efgFzVfNF-mI7L2tmj5yJGODANqfA0LKqyk4FA4_im8IcmlYvA-X-bbgHmMMDFoEptISLkPfo-jKDH6I7-zqFaAhggQcB2n4tYGo1oFmA8kmfahSTmgn1AGPadVKx5eIbc3M96BOb2NnQs8vuaxnBM1Ln0JhOtmgrSTh1d_Anxh04Lfqvam4SBBHwt4lK3xdPSk92OwfWp3Qb_bGcqr_-oOwVHg" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/30 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 p-8 w-full">
+              <h1 className="text-4xl font-extrabold text-white tracking-tight leading-tight mb-6">
+                Find Your <br />Perfect Brew
+              </h1>
+              <div className="flex flex-col gap-3">
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">search</span>
+                  <input 
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-                    placeholder="Cari nama coffee shop…"
-                    className="w-full pl-9 pr-3 py-2 text-sm rounded-md border focus:outline-none focus:ring-2"
-                    style={{ background: '#fff', borderColor: 'rgba(55,53,47,0.16)', color: '#37352f', ['--tw-ring-color' as string]: '#8B5E3C40' }}
+                    className="w-full h-14 pl-12 pr-4 rounded-xl border-none bg-white text-on-surface placeholder:text-on-surface-variant/60 shadow-lg" 
+                    placeholder="Search coffee shops..." 
                   />
                 </div>
-                <select
+                <button 
+                  onClick={handleFindNearby}
+                  className="w-full h-14 bg-white text-primary rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
+                >
+                  <span className="material-symbols-outlined">near_me</span>
+                  Cari Sekitarku
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Hero (Current Side-by-Side) */}
+          <div className="hidden lg:grid grid-cols-2 gap-12 items-center">
+            <div className="z-10">
+              <h1 className="text-5xl lg:text-7xl font-extrabold text-primary leading-[1.1] tracking-tighter mb-8">
+                Temukan <br />Kopi Terbaikmu
+              </h1>
+              <p className="text-on-surface-variant text-lg lg:text-xl mb-12 max-w-lg leading-relaxed">
+                Jelajahi coffee shop artisanal yang sesuai dengan mood-mu. Mulai dari tempat kerja yang tenang hingga spot estetik akhir pekan.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 max-w-xl">
+                <div className="flex-grow relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/40">search</span>
+                  <input 
+                    type="text" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+                    className="w-full pl-12 pr-4 py-5 rounded-xl bg-white border-2 border-primary/5 focus:ring-1 focus:ring-primary/20 text-on-surface placeholder:text-on-surface-variant/50 shadow-sm transition-all"
+                    placeholder="Cari berdasarkan nama coffee shop" 
+                  />
+                </div>
+                <button 
+                  onClick={handleFindNearby}
+                  className="flex items-center justify-center gap-2 px-8 py-5 bg-white text-primary border-2 border-primary/5 rounded-xl font-bold transition-all hover:brightness-95 active:scale-95 shadow-sm"
+                >
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: '"FILL" 1' }}>near_me</span>
+                  Cari Sekitarku
+                </button>
+              </div>
+
+              {locationError && (
+                <p className="text-sm mt-4 text-destructive font-medium">{locationError}</p>
+              )}
+            </div>
+
+            <div className="relative h-[500px]">
+              <div className="absolute inset-0 bg-secondary-container/20 rounded-[2rem] rotate-3 -z-10"></div>
+              <img 
+                className="w-full h-full object-cover rounded-xl ambient-shadow -rotate-2" 
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDb0YnRbUkkwm0Cdwviy7hq1EV7uAHZychZ6YoJZOLgazEU2Q3efgFzVfNF-mI7L2tmj5yJGODANqfA0LKqyk4FA4_im8IcmlYvA-X-bbgHmMMDFoEptISLkPfo-jKDH6I7-zqFaAhggQcB2n4tYGo1oFmA8kmfahSTmgn1AGPadVKx5eIbc3M96BOb2NnQs8vuaxnBM1Ln0JhOtmgrSTh1d_Anxh04Lfqvam4SBBHwt4lK3xdPSk92OwfWp3Qb_bGcqr_-oOwVHg" 
+                alt="Premium Coffee"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* ── Nearby Coffee Shops Section ── */}
+        <section ref={shopsSectionRef} className="py-24 px-6 md:px-8 max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-16 gap-6">
+            <div>
+              <span className="text-sm uppercase tracking-[0.1em] text-tertiary font-bold mb-4 block">Locally Loved</span>
+              <h2 className="text-3xl md:text-4xl font-bold text-on-surface tracking-tight">Nearby Roasts</h2>
+              
+              {hasSearched && !isLoadingNearby && (
+                <p className="text-on-surface-variant mt-2 text-sm md:text-base">
+                  {nearbyShops.length > 0
+                    ? `${nearbyShops.length} coffee shop ditemukan dalam radius ${searchRadius} km.`
+                    : 'Tidak ada hasil. Coba perbesar radius.'}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between w-full md:w-auto gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-on-surface-variant">Radius:</span>
+                <select 
                   value={searchRadius}
                   onChange={(e) => {
                     const r = Number(e.target.value);
                     setSearchRadius(r);
                     if (userCoords) searchNearby(userCoords.lat, userCoords.lng, r, searchQuery);
                   }}
-                  className="px-3 py-2 text-sm rounded-md border focus:outline-none"
-                  style={{ background: '#fff', borderColor: 'rgba(55,53,47,0.16)', color: '#37352f' }}
+                  className="bg-surface-container-low border-none rounded-lg text-sm font-bold focus:ring-1 focus:ring-primary/20 px-3 py-2"
                 >
-                  <option value={1}>1 km</option>
-                  <option value={3}>3 km</option>
-                  <option value={5}>5 km</option>
-                  <option value={10}>10 km</option>
-                  <option value={25}>25 km</option>
-                  <option value={50}>50 km</option>
+                  {[1, 3, 5, 10, 25, 50].map(r => (
+                    <option key={r} value={r}>{r} km</option>
+                  ))}
                 </select>
-                <button
-                  onClick={handleSearch}
-                  disabled={isLoadingNearby}
-                  className="px-4 py-2 text-sm font-medium rounded-md transition-colors duration-100 disabled:opacity-50"
-                  style={{ background: '#37352f', color: '#fff' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#5a3e28')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = '#37352f')}
-                >
-                  Cari
-                </button>
               </div>
+              <button className="text-primary font-bold flex items-center gap-2 group transition-colors text-sm">
+                See All<span className="material-symbols-outlined transition-transform group-hover:translate-x-1 text-base">arrow_forward</span>
+              </button>
+            </div>
+          </div>
 
-              {/* Results — table-like Notion cards */}
-              {nearbyShops.length > 0 && (
-                <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'rgba(55,53,47,0.09)' }}>
-                  {nearbyShops.map((shop, idx) => (
-                    <Link
-                      key={shop.id}
-                      href={`/shop/${shop.id}`}
-                      className="flex items-center gap-4 px-4 py-3.5 transition-colors duration-75"
-                      style={{
-                        borderBottom: idx < nearbyShops.length - 1 ? '1px solid rgba(55,53,47,0.09)' : 'none',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(55,53,47,0.03)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      {/* Thumbnail */}
-                      <div className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden" style={{ background: '#f6f5f4' }}>
-                        {shop.fotoProfil ? (
-                          <img src={shop.fotoProfil.url} alt={shop.nama_toko} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-2xl">☕</div>
-                        )}
+          {isLoadingNearby ? (
+            <div className="flex flex-col items-center gap-4 py-20">
+              <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+              <p className="text-primary font-medium">Mencari roaster terbaik di sekitarmu...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12">
+              {nearbyShops.length > 0 ? (
+                nearbyShops.map((shop, idx) => (
+                  <Link 
+                    key={shop.id}
+                    href={`/shop/${shop.id}`}
+                    className={`flex flex-col gap-4 md:gap-6 group ${idx % 2 === 1 && !isLoadingNearby ? 'lg:mt-12' : ''}`}
+                  >
+                    <div className="relative rounded-2xl overflow-hidden aspect-[4/5] md:aspect-[4/5] bg-surface-container shadow-sm group-hover:shadow-md transition-shadow">
+                      {shop.fotoProfil ? (
+                        <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src={shop.fotoProfil.url} alt={shop.nama_toko} />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-4xl md:text-6xl opacity-20">☕</div>
+                      )}
+                      
+                    </div>
+                    
+                    <div className="flex flex-col gap-1 md:gap-2">
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-base md:text-2xl font-bold text-primary group-hover:underline underline-offset-4 decoration-2 decoration-primary/30 leading-tight">{shop.nama_toko}</h3>
                       </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-medium truncate" style={{ color: '#37352f' }}>
-                            {shop.nama_toko}
-                          </h3>
-                          {shop.tags && (
-                            <div className="hidden sm:flex gap-1">
-                              {shop.tags.split(',').slice(0, 2).map((tag, i) => (
-                                <span key={i} className="px-1.5 py-0.5 text-[11px] rounded" style={{ background: 'rgba(140,100,60,0.1)', color: '#8B5E3C' }}>
-                                  {tag.trim()}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-xs truncate mt-0.5" style={{ color: '#37352f80' }}>
-                          {shop.alamat}
-                        </p>
-                      </div>
-
-                      {/* Distance */}
-                      {shop.distance != null && (
-                        <div className="flex-shrink-0 text-right">
-                          <span className="text-xs font-medium" style={{ color: '#8B5E3C' }}>
-                            {formatDistance(shop.distance)}
-                          </span>
+                      
+                      {shop.tags && (
+                        <div className="flex flex-wrap gap-1.5 md:gap-2">
+                          {shop.tags.split(',').slice(0, 2).map((tag, i) => (
+                            <span key={i} className={`px-2 py-0.5 rounded-sm text-[8px] md:text-[10px] font-bold uppercase tracking-tight ${i === 0 ? 'bg-surface-variant text-on-surface-variant' : 'bg-tertiary/10 text-tertiary'}`}>
+                              {tag.trim()}
+                            </span>
+                          ))}
                         </div>
                       )}
-
-                      {/* Arrow */}
-                      <svg className="w-4 h-4 flex-shrink-0" style={{ color: '#37352f40' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    </Link>
-                  ))}
-                </div>
+                      
+                      <p className="text-on-surface-variant/70 text-[10px] md:text-sm font-medium mt-1 md:mt-2 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px] md:text-[18px]">location_on</span>
+                        {formatDistance(shop.distance)}
+                      </p>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                !isLoadingNearby && hasSearched && (
+                  <div className="col-span-full py-20 text-center bg-surface-container-low rounded-3xl border-2 border-dashed border-outline-variant">
+                    <p className="text-on-surface-variant font-medium">Tidak ada coffee shop ditemukan. Coba perbesar radius pencarian.</p>
+                  </div>
+                )
               )}
-            </>
+            </div>
           )}
 
-          {/* Stats — only when no search yet */}
           {!hasSearched && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-[600px] mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto py-12">
               {[
                 { value: 100, suffix: '+', label: 'Coffee Shop' },
                 { value: 500, suffix: '+', label: 'Menu Tersedia' },
                 { value: 50, suffix: '+', label: 'Kota' },
                 { value: 1000, suffix: '+', label: 'Pengguna' },
               ].map((stat, i) => (
-                <div key={i} className="text-center">
-                  <div className="text-2xl md:text-3xl font-bold" style={{ color: '#8B5E3C' }}>
+                <div key={i} className="text-center group">
+                  <div className="text-3xl md:text-4xl font-extrabold text-primary mb-1 group-hover:scale-110 transition-transform">
                     <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                   </div>
-                  <p className="text-xs mt-1" style={{ color: '#37352f80' }}>{stat.label}</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60">{stat.label}</p>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </section>
+        </section>
 
-      {/* ── Divider ── */}
-      <div className="max-w-[1080px] mx-auto px-6">
-        <hr style={{ borderColor: 'rgba(55,53,47,0.09)' }} />
-      </div>
+        {/* ── How it Works Section ── */}
+        <section className="bg-surface-container-low/50 py-24 px-6 md:px-8">
+          <div className="max-w-7xl mx-auto md:px-8 bg-surface-container-low md:bg-transparent rounded-[2rem] p-8 md:p-0">
+            <div className="text-center mb-12 md:mb-20">
+              <h2 className="text-3xl md:text-4xl font-bold text-primary tracking-tight mb-4">The Perfect Ritual</h2>
+              <p className="text-on-surface-variant max-w-lg mx-auto text-sm md:text-base">Beri tahu kami di mana kamu berada, dan kami akan mencarikan panggangan terbaik di sekitarmu.</p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-10 md:gap-16 relative">
+              {[
+                { icon: 'map', title: 'Setel Lokasi', desc: 'Beri tahu kami di mana kamu berada untuk menemukan pemanggang di sekitarmu.', color: 'bg-secondary-container text-on-secondary-container' },
+                { icon: 'psychology', title: 'Pilih Vibe', desc: 'Filter berdasarkan pencahayaan, kecepatan Wi-Fi, jenis tempat duduk, atau asal kopi.', color: 'bg-secondary-container text-on-secondary-container' },
+                { icon: 'coffee', title: 'Nikmati Seduhan', desc: 'Kunjungi tempat pilihanmu dan nikmati kopi buatan barista yang sempurna.', color: 'bg-secondary-container text-on-secondary-container' },
+              ].map((step, i) => (
+                <div key={i} className="flex flex-row md:flex-col items-center md:text-center group gap-6 md:gap-0">
+                  <div className={`w-14 h-14 md:w-20 md:h-20 shrink-0 rounded-2xl md:rounded-full ${step.color} flex items-center justify-center mb-0 md:mb-8 ambient-shadow group-hover:scale-110 transition-transform`}>
+                    <span className="material-symbols-outlined text-2xl md:text-4xl">{step.icon}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <h4 className="text-lg md:text-xl font-bold mb-2 md:mb-4 text-primary leading-none md:leading-normal">{step.title}</h4>
+                    <p className="text-on-surface-variant/80 leading-relaxed text-xs md:text-sm">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-      {/* ── CTA Section ── */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-[1080px] mx-auto px-6">
-          <div
-            className="rounded-xl p-8 md:p-12"
-            style={{ background: '#f6f5f4' }}
-          >
-            <div className="max-w-lg mx-auto text-center">
-              <div className="text-4xl mb-4">🏪</div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ color: '#37352f', letterSpacing: '-0.02em' }}>
-                Punya Coffee Shop?
-              </h2>
-              <p className="text-sm mb-6 leading-relaxed" style={{ color: '#37352f80' }}>
-                Daftarkan coffee shop kamu dan jangkau lebih banyak pelanggan. Kelola profil, menu, dan foto — semuanya gratis.
+        {/* ── Partner Section ── */}
+        <section className="py-24 px-8 max-w-7xl mx-auto">
+          <div className="bg-primary rounded-[2.5rem] p-12 md:p-20 text-center relative overflow-hidden premium-gradient shadow-2xl">
+            <div className="relative z-10 max-w-2xl mx-auto">
+              <span className="text-secondary-container font-bold tracking-[0.2em] uppercase text-xs mb-6 block">Business</span>
+              <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-8 leading-tight">Punya Coffee Shop Sendiri?</h2>
+              <p className="text-white/80 text-lg mb-12 leading-relaxed">
+                Daftarkan toko Anda dan jangkau komunitas pecinta kopi terbesar. Kelola menu, terima pesanan, dan bangun brand Anda bersama kami.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link
-                  href="/register"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-colors duration-100"
-                  style={{ background: '#37352f', color: '#fff' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#5a3e28')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = '#37352f')}
-                >
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link href="/register" className="w-full sm:w-auto px-10 py-5 bg-white text-primary rounded-xl font-bold text-lg hover:bg-secondary-container transition-colors shadow-lg">
                   Daftar Sekarang
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
                 </Link>
-                <Link
-                  href="/login"
-                  className="px-5 py-2.5 text-sm transition-colors duration-100"
-                  style={{ color: '#37352f80' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = '#37352f')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = '#37352f80')}
-                >
-                  Sudah punya akun? Masuk →
+                <Link href="/login" className="text-white/70 hover:text-white font-medium transition-colors underline underline-offset-8">
+                  Sudah punya akun? Masuk
                 </Link>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       {/* ── Footer ── */}
-      <footer className="py-6 border-t" style={{ borderColor: 'rgba(55,53,47,0.09)' }}>
-        <div className="max-w-[1080px] mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm">☕</span>
-            <span className="text-xs font-medium" style={{ color: '#37352f' }}>CariKopi</span>
+      <footer className="w-full bg-surface-container-low font-['Plus_Jakarta_Sans']">
+        <div className="flex flex-col md:flex-row justify-between items-center w-full px-12 py-16 max-w-7xl mx-auto gap-8">
+          <div className="flex flex-col gap-4 items-center md:items-start">
+            <div className="text-2xl font-bold text-primary tracking-tighter">CariKopi</div>
+            <p className="text-on-surface-variant/70 text-sm leading-relaxed text-center md:text-left">
+              © {new Date().getFullYear()} CariKopi. Brewed with care.
+            </p>
           </div>
-          <p className="text-xs" style={{ color: '#37352f80' }}>
-            © {new Date().getFullYear()} CariKopi
-          </p>
+          <div className="flex flex-wrap justify-center gap-8">
+            <Link href="#" className="text-on-surface-variant/70 hover:text-primary underline decoration-primary/30 decoration-2 underline-offset-8 text-sm font-medium transition-all">Privacy Policy</Link>
+            <Link href="#" className="text-on-surface-variant/70 hover:text-primary underline decoration-primary/30 decoration-2 underline-offset-8 text-sm font-medium transition-all">Terms of Service</Link>
+            <Link href="#" className="text-on-surface-variant/70 hover:text-primary underline decoration-primary/30 decoration-2 underline-offset-8 text-sm font-medium transition-all">Contact</Link>
+          </div>
         </div>
       </footer>
     </div>

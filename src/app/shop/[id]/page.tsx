@@ -35,6 +35,7 @@ interface MenuItemPublic {
   harga: number;
   deskripsi: string;
   foto: FotoItem[];
+  category?: string; // Optional category field
 }
 
 interface CartItem {
@@ -70,42 +71,35 @@ function formatRupiah(value: number): string {
 
 // ── Photo Lightbox ──
 
-function Lightbox({ items, startIndex, onClose }: { items: { url: string; caption?: string }[]; startIndex: number; onClose: () => void }) {
+function Lightbox({ fotos, startIndex, onClose }: { fotos: FotoItem[]; startIndex: number; onClose: () => void }) {
   const [current, setCurrent] = useState(startIndex);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
       <div className="relative max-w-4xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
-        <img src={items[current].url} alt={items[current].caption || ''} className="w-full max-h-[80vh] object-contain rounded-2xl" />
-
-        {/* Caption */}
-        {items[current].caption && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-12 rounded-b-2xl">
-            <h3 className="text-white text-lg font-semibold text-center">{items[current].caption}</h3>
-          </div>
-        )}
+        <img src={fotos[current].url} alt="" className="w-full max-h-[80vh] object-contain rounded-2xl" />
 
         {/* Controls */}
-        <button onClick={onClose} className="absolute top-4 right-4 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors z-10 font-bold backdrop-blur-md">
-          ✕
+        <button onClick={onClose} className="absolute top-3 right-3 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
 
-        {items.length > 1 && (
+        {fotos.length > 1 && (
           <>
             <button
-              onClick={() => setCurrent((c) => (c - 1 + items.length) % items.length)}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-all z-10 backdrop-blur-md"
+              onClick={() => setCurrent((c) => (c - 1 + fotos.length) % fotos.length)}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70"
             >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
             <button
-              onClick={() => setCurrent((c) => (c + 1) % items.length)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-all z-10 backdrop-blur-md"
+              onClick={() => setCurrent((c) => (c + 1) % fotos.length)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70"
             >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
             </button>
-            <div className="absolute top-4 left-4 bg-black/50 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md">
-              {current + 1} / {items.length}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full">
+              {current + 1} / {fotos.length}
             </div>
           </>
         )}
@@ -118,11 +112,11 @@ function Lightbox({ items, startIndex, onClose }: { items: { url: string; captio
 
 export default function ShopDetailPage({ params }: { params: any }) {
   const nextParams = useParams();
-  
+
   // Robust Shop ID detection for usage in all functions
-  const shopId = (nextParams?.id as string) || 
-                 (typeof window !== 'undefined' ? window.location.pathname.match(/\/shop\/([^\s\/]+)/)?.[1] : '') ||
-                 '';
+  const shopId = (nextParams?.id as string) ||
+    (typeof window !== 'undefined' ? window.location.pathname.match(/\/shop\/([^\s\/]+)/)?.[1] : '') ||
+    '';
   const [shop, setShop] = useState<ShopDetail | null>(null);
   const [menus, setMenus] = useState<MenuItemPublic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -130,7 +124,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
   const [hasMounted, setHasMounted] = useState(false);
 
   // Lightbox
-  const [lightboxItems, setLightboxItems] = useState<{ url: string; caption?: string }[] | null>(null);
+  const [lightboxFotos, setLightboxFotos] = useState<FotoItem[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Cart & Order
@@ -139,10 +133,11 @@ export default function ShopDetailPage({ params }: { params: any }) {
   const [customerForm, setCustomerForm] = useState({ name: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
+  const [activeMenuCategory, setActiveMenuCategory] = useState('Semua');
 
   // Tabs
   const [activeTab, setActiveTab] = useState<'menu' | 'gallery'>('menu');
-  const [galleries, setGalleries] = useState<GalleryItemPublic[]>([]);
+  const [galleries, setGalleries] = useState<any[]>([]);
 
   // Past Orders
   const [pastOrders, setPastOrders] = useState<PastOrder[]>([]);
@@ -152,7 +147,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
   const fetchPastOrders = async () => {
     const session = localStorage.getItem('unique_session');
     if (!session || !shopId) return;
-    
+
     setIsLoadingOrders(true);
     try {
       const res = await fetch(`/api/public/orders/get-by-unique-session/${session}/${shopId}`);
@@ -248,8 +243,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
   useEffect(() => {
     let isMounted = true;
     const controller = new AbortController();
-    
-    // Safety Force-Stop Loading Spinner after 12 seconds
+
     const globalTimeout = setTimeout(() => {
       if (isMounted) setIsLoading(false);
     }, 12000);
@@ -260,10 +254,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
       setError('');
 
       try {
-        // 1. Resolve Shop ID
         let id = '';
-        
-        // A. From Props (Handle potential Promise in Next.js 15)
         if (params) {
           if (typeof params.then === 'function') {
             const resolved = await params;
@@ -273,12 +264,10 @@ export default function ShopDetailPage({ params }: { params: any }) {
           }
         }
 
-        // B. From Hook fallback
         if (!id && nextParams?.id) {
           id = nextParams.id as string;
         }
 
-        // C. From URL hard fallback (Regex search for UUID or ID after /shop/)
         if (!id || id === '[id]') {
           if (typeof window !== 'undefined') {
             const match = window.location.pathname.match(/\/shop\/([^\s\/]+)/);
@@ -286,9 +275,8 @@ export default function ShopDetailPage({ params }: { params: any }) {
           }
         }
 
-        if (!id || id === '[id]') return; // Wait for next cycle
+        if (!id || id === '[id]') return;
 
-        // 2. Data Fetching helper
         const fetchData = async (url: string) => {
           try {
             const res = await fetch(url, { signal: controller.signal });
@@ -314,7 +302,6 @@ export default function ShopDetailPage({ params }: { params: any }) {
         if (menuData && menuData.data) setMenus(menuData.data);
         if (galleryData && galleryData.data) setGalleries(galleryData.data);
 
-        // Fetch past orders in background
         const session = localStorage.getItem('unique_session');
         if (session) {
           fetchData(`/api/public/orders/get-by-unique-session/${session}/${id}`).then(data => {
@@ -343,8 +330,8 @@ export default function ShopDetailPage({ params }: { params: any }) {
     };
   }, [params, nextParams]);
 
-  const openLightbox = (items: { url: string; caption?: string }[], index: number) => {
-    setLightboxItems(items);
+  const openLightbox = (fotos: FotoItem[], index: number) => {
+    setLightboxFotos(fotos);
     setLightboxIndex(index);
   };
 
@@ -383,250 +370,242 @@ export default function ShopDetailPage({ params }: { params: any }) {
 
   const tags = shop.tags ? shop.tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
 
-  const filteredMenus = menus.filter((menu) => 
-    menu.nama.toLowerCase().includes(menuSearchQuery.toLowerCase())
-  );
+  const getCategory = (menu: MenuItemPublic) => {
+    if (menu.category) return menu.category;
+    const name = menu.nama.toLowerCase();
+    if (name.includes('kopi') || name.includes('espresso') || name.includes('latte') || name.includes('cappuccino') || name.includes('americano') || name.includes('brew')) return 'Kopi';
+    if (name.includes('teh') || name.includes('tea') || name.includes('juice') || name.includes('jus') || name.includes('milk') || name.includes('susu') || name.includes('chocolate') || name.includes('cokelat')) return 'Non Kopi';
+    if (name.includes('nasi') || name.includes('mie') || name.includes('roti') || name.includes('snack') || name.includes('food') || name.includes('makan') || name.includes('cake') || name.includes('pastry')) return 'Makanan';
+    return 'Lainnya';
+  };
+
+  const filteredMenus = menus.filter((menu) => {
+    const matchesSearch = menu.nama.toLowerCase().includes(menuSearchQuery.toLowerCase());
+    const itemCategory = getCategory(menu);
+    const matchesCategory = activeMenuCategory === 'Semua' || itemCategory === activeMenuCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border/40">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-brown-900/20">
-              <svg className="w-5 h-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-                <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
-              </svg>
+      <nav className="fixed top-0 w-full z-50 bg-white border-b border-primary/5 shadow-sm">
+        <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="bg-primary p-2 rounded-lg text-white shadow-md group-hover:scale-105 transition-transform">
+              <svg fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path><line x1="6" x2="6" y1="2" y2="4"></line><line x1="10" x2="10" y1="2" y2="4"></line><line x1="14" x2="14" y1="2" y2="4"></line></svg>
             </div>
-            <span className="text-xl font-bold text-foreground tracking-tight">CariKopi</span>
+            <span className="text-xl font-bold tracking-tighter text-primary">CariKopi</span>
           </Link>
-          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/" className="text-sm font-semibold text-primary hover:opacity-80 transition-opacity">
             ← Kembali
           </Link>
         </div>
       </nav>
 
-      {/* Hero / Cover */}
-      <div className="relative h-64 md:h-80 bg-gradient-to-br from-brown-200 to-brown-300 overflow-hidden">
+      <section className="relative h-[65vh] md:h-[80vh] min-h-[500px] flex items-center justify-center overflow-hidden">
         {shop.fotoProfil ? (
           <img
             src={shop.fotoProfil.url}
             alt={shop.nama_toko}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover brightness-50"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <svg className="w-24 h-24 text-brown-400/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-brown-300 to-brown-400 flex items-center justify-center">
+            <svg className="w-24 h-24 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
               <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-              <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
+              <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="14" y2="2" x2="14" y2="4" />
             </svg>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-      </div>
+        <div className="relative z-10 text-center px-6 max-w-4xl">
+          <div className="inline-block px-4 py-1 rounded-full bg-primary/20 text-white backdrop-blur-md mb-6 border border-white/20 text-xs md:text-sm tracking-widest uppercase">
+            Est. Artisanal Experience
+          </div>
+          <h1 className="text-4xl md:text-7xl font-bold text-white mb-6 tracking-tight leading-tight">
+            {shop.nama_toko}
+          </h1>
+          {shop.deskripsi && shop.deskripsi !== '-' && (
+            <p className="text-base md:text-lg text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed line-clamp-3">
+              {shop.deskripsi}
+            </p>
+          )}
+          <div className="flex flex-wrap justify-center gap-4">
+            <button 
+              onClick={() => {
+                const menuSection = document.getElementById('menu-section');
+                menuSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-8 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-opacity-90 transition-all transform hover:scale-105 shadow-xl"
+            >
+              Order Online
+            </button>
+          </div>
+        </div>
+      </section>
 
-      {/* Shop Info */}
-      <div className="max-w-5xl mx-auto px-6 -mt-16 relative z-10">
-        <div className="bg-card rounded-2xl shadow-lg border border-border/60 p-6 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-start gap-5">
-            {/* Profile Image */}
-            <div className="flex-shrink-0 w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-brown-100 border-4 border-card shadow-md overflow-hidden -mt-16 md:-mt-20">
-              {shop.fotoProfil ? (
-                <img src={shop.fotoProfil.url} alt={shop.nama_toko} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-brown-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-                  </svg>
-                </div>
-              )}
-            </div>
-
-            {/* Details */}
-            <div className="flex-1 space-y-3">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{shop.nama_toko}</h1>
-
-              <div className="flex items-start gap-2 text-muted-foreground text-sm">
-                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+      <section className="relative -mt-32 md:-mt-24 z-20 px-4 max-w-5xl mx-auto mb-16">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col md:flex-row gap-8 items-center border border-primary/5">
+          <div className="w-40 h-40 rounded-xl overflow-hidden shadow-lg flex-shrink-0 border-4 border-white -mt-20 md:mt-0">
+            {shop.fotoProfil ? (
+              <img src={shop.fotoProfil.url} alt={shop.nama_toko} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-surface-container-low">
+                <svg className="w-16 h-16 text-primary/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
                 </svg>
-                <span>{shop.alamat}{shop.city ? `, ${shop.city}` : ''}</span>
               </div>
-
-              {shop.deskripsi && shop.deskripsi !== '-' && (
-                <p className="text-muted-foreground text-sm leading-relaxed">{shop.deskripsi}</p>
-              )}
-
-              {/* Social Media Links */}
-              <div className="flex flex-wrap gap-3 pt-1">
-                {shop.whatsapp && (
-                  <a href={shop.whatsapp} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-green-600 font-medium hover:underline">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-                    WhatsApp
-                  </a>
-                )}
-                {shop.instagram && (
-                  <a href={shop.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-pink-600 font-medium hover:underline">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-                    Instagram
-                  </a>
-                )}
-                {shop.tiktok && (
-                  <a href={shop.tiktok} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-black font-medium hover:underline">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" /></svg>
-                    TikTok
-                  </a>
-                )}
-                {shop.facebook && (
-                  <a href={shop.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:underline">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
-                    Facebook
-                  </a>
-                )}
-                {shop.twitter && (
-                  <a href={shop.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-blue-400 font-medium hover:underline">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" /></svg>
-                    Twitter
-                  </a>
-                )}
+            )}
+          </div>
+          <div className="flex-grow text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start gap-2 text-on-surface-variant mb-2">
+              <svg fill="none" height="16" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              <span className="text-sm font-medium">{shop.alamat}{shop.city ? `, ${shop.city}` : ''}</span>
+            </div>
+            <h2 className="text-3xl font-bold text-primary mb-4">{shop.nama_toko}</h2>
+            
+            {tags.length > 0 && (
+              <div className="flex flex-wrap justify-center md:justify-start gap-3 mb-6">
+                {tags.map((tag, i) => (
+                  <span key={i} className="px-3 py-1 bg-surface-container-low text-primary rounded-full text-xs font-bold uppercase">
+                    {tag}
+                  </span>
+                ))}
               </div>
+            )}
 
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {tags.map((tag, i) => (
-                    <span key={i} className="px-3 py-1 bg-brown-100 text-brown-700 text-xs rounded-full font-medium">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Map Link */}
+            <div className="flex flex-wrap justify-center md:justify-start gap-6">
               {shop.latitude && shop.longitude && (
                 <a
                   href={`https://www.google.com/maps?q=${shop.latitude},${shop.longitude}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline"
+                  className="inline-flex items-center gap-2 text-primary font-bold hover:underline"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-                  </svg>
                   Lihat di Google Maps
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
-                  </svg>
+                  <svg fill="none" height="16" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
                 </a>
               )}
+              
+              <div className="flex items-center gap-4">
+                {shop.whatsapp && (
+                  <a href={shop.whatsapp} target="_blank" rel="noopener noreferrer" className="text-on-surface-variant hover:text-primary transition-colors">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                  </a>
+                )}
+                {shop.instagram && (
+                  <a href={shop.instagram} target="_blank" rel="noopener noreferrer" className="text-on-surface-variant hover:text-primary transition-colors">
+                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Tab Switcher */}
-      <div className="max-w-5xl mx-auto px-6 mt-8">
-        <div className="flex border-b border-border/40 gap-8">
+      <div className="max-w-5xl mx-auto px-8 mb-8" id="menu-section">
+        <div className="flex border-b border-primary/5 gap-12">
           <button
             onClick={() => setActiveTab('menu')}
-            className={`pb-4 text-lg font-bold transition-all relative ${
-              activeTab === 'menu' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className={`pb-4 text-lg font-bold transition-all relative ${activeTab === 'menu' ? 'text-primary' : 'text-on-surface-variant hover:text-primary'
+              }`}
           >
-            Menu
+            Pilihan Menu
             {activeTab === 'menu' && (
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />
-            )}
-            {menus.length > 0 && (
-              <span className="ml-2 text-xs font-normal opacity-60">({menus.length})</span>
             )}
           </button>
           <button
             onClick={() => setActiveTab('gallery')}
-            className={`pb-4 text-lg font-bold transition-all relative ${
-              activeTab === 'gallery' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className={`pb-4 text-lg font-bold transition-all relative ${activeTab === 'gallery' ? 'text-primary' : 'text-on-surface-variant hover:text-primary'
+              }`}
           >
-            Galeri
+            Galeri Foto
             {activeTab === 'gallery' && (
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />
-            )}
-            {galleries.length > 0 && (
-              <span className="ml-2 text-xs font-normal opacity-60">({galleries.length})</span>
             )}
           </button>
         </div>
       </div>
 
-      {/* Content Section */}
       <div className="max-w-5xl mx-auto px-6 py-8">
         {activeTab === 'menu' ? (
           <div className="space-y-6">
-            {/* Menu Search Field */}
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input
-                type="text"
-                placeholder="Cari nama menu..."
-                value={menuSearchQuery}
-                onChange={(e) => setMenuSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-border/60 rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm text-foreground transition-all"
-              />
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-surface-container-low/30 p-4 rounded-2xl border border-primary/5">
+              <div className="relative flex-grow w-full md:max-w-md">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                <input
+                  type="text"
+                  placeholder="Cari nama menu..."
+                  value={menuSearchQuery}
+                  onChange={(e) => setMenuSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-border/60 rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm text-foreground transition-all"
+                />
+              </div>
+
+              {/* Category Sub-tabs */}
+              <div className="flex flex-wrap gap-2">
+                {['Semua', 'Kopi', 'Non Kopi', 'Makanan'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveMenuCategory(cat)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${activeMenuCategory === cat
+                        ? 'bg-primary text-white'
+                        : 'bg-white text-primary border border-primary/10 hover:bg-primary/5'
+                      }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {filteredMenus.length === 0 ? (
-              <div className="bg-card rounded-2xl border border-border/60 p-10 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-brown-100 flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-7 h-7 text-brown-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-                    <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
-                  </svg>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  {menuSearchQuery ? 'Menu tidak ditemukan.' : 'Belum ada menu yang tersedia.'}
-                </p>
+              <div className="bg-white rounded-2xl border border-primary/5 p-12 text-center shadow-sm">
+                <p className="text-on-surface-variant font-medium">Menu tidak ditemukan.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
                 {filteredMenus.map((menu) => {
                   const thumb = menu.foto?.[0];
                   return (
-                    <div key={menu.id} className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden hover:shadow-md transition-all duration-200">
-                      {/* Image */}
+                    <div key={menu.id} className="bg-white p-3 md:p-4 rounded-2xl border border-primary/5 shadow-sm hover:shadow-xl transition-all group flex flex-col h-full">
                       <div
-                        className={`aspect-[4/3] bg-brown-100 relative overflow-hidden ${thumb ? 'cursor-pointer' : ''}`}
+                        className={`relative h-28 md:h-56 rounded-xl overflow-hidden mb-3 md:mb-4 flex-shrink-0 ${thumb ? 'cursor-pointer' : ''}`}
                         onClick={() => {
-                          if (menu.foto?.length > 0) {
-                            openLightbox(menu.foto.map(f => ({ url: f.url, caption: menu.nama })), 0);
-                          }
+                          if (menu.foto?.length > 0) openLightbox(menu.foto, 0);
                         }}
                       >
                         {thumb ? (
-                          <img src={thumb.url} alt={menu.nama} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                          <img src={thumb.url} alt={menu.nama} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <svg className="w-10 h-10 text-brown-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <div className="w-full h-full flex items-center justify-center bg-surface-container-low">
+                            <svg className="w-12 h-12 text-primary/10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                               <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
                             </svg>
                           </div>
                         )}
-                      </div>
-
-                      {/* Info */}
-                      <div className="p-3 space-y-1.5">
-                        <h3 className="font-semibold text-foreground text-sm line-clamp-1">{menu.nama}</h3>
-                        <p className="text-primary font-bold text-base">{formatRupiah(menu.harga)}</p>
-                        
-                        <div className="pt-2">
-                           <button
-                             onClick={() => addToCart(menu)}
-                             className="w-full py-1.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors text-xs flex items-center justify-center gap-1.5"
-                           >
-                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
-                             Tambah
-                           </button>
+                        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold text-primary shadow-sm tracking-wider uppercase">
+                          Choice
                         </div>
                       </div>
+                      <div className="flex flex-col md:flex-row justify-between items-start mb-2 px-1 gap-1">
+                        <h3 className="text-sm md:text-lg font-bold group-hover:text-primary transition-colors line-clamp-2 md:line-clamp-1 h-10 md:h-auto">{menu.nama}</h3>
+                        <span className="text-sm md:text-base font-bold text-primary shrink-0">{formatRupiah(menu.harga)}</span>
+                      </div>
+                      <button
+                        onClick={() => addToCart(menu)}
+                        className="w-full py-2.5 md:py-3.5 bg-primary/10 text-primary font-bold rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm active:scale-[0.98] mt-auto flex items-center justify-center gap-1.5 text-xs md:text-base"
+                      >
+                        <span className="md:hidden flex items-center gap-1">
+                          <span className="text-lg">+</span>
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                          </svg>
+                        </span>
+                        <span className="hidden md:inline">Tambah ke Keranjang</span>
+                      </button>
                     </div>
                   );
                 })}
@@ -634,137 +613,229 @@ export default function ShopDetailPage({ params }: { params: any }) {
             )}
           </div>
         ) : (
-          /* Gallery Content */
-          <div className="space-y-6">
-            {galleries.length === 0 ? (
-              <div className="bg-card rounded-2xl border border-border/60 p-12 text-center">
-                <p className="text-muted-foreground">Belum ada foto galeri.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {galleries.map((item, index) => (
+              <div
+                key={item.id}
+                onClick={() => openLightbox(galleries.map(g => g.foto), index)}
+                className="aspect-square bg-brown-100 rounded-2xl overflow-hidden border border-border/60 cursor-pointer group"
+              >
+                <img
+                  src={item.foto.url}
+                  alt={item.nama}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
               </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {galleries.map((item, index) => (
-                  <div
-                    key={item.id}
-                    onClick={() => openLightbox(galleries.map(g => ({ url: g.foto.url, caption: g.nama })), index)}
-                    className="aspect-square bg-brown-100 rounded-2xl overflow-hidden border border-border/60 cursor-pointer group"
-                  >
-                    <img
-                      src={item.foto.url}
-                      alt={item.nama}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            ))}
           </div>
         )}
       </div>
 
-      {/* Footer */}
-      <footer className="py-8 bg-brown-950 text-brown-400 border-t border-brown-900 mt-10">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-brown-800 flex items-center justify-center">
-              <svg className="w-4 h-4 text-brown-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-              </svg>
-            </div>
-            <span className="text-brown-300 font-semibold">CariKopi</span>
-          </div>
-          <p className="text-sm text-brown-500">© {new Date().getFullYear()} carikopi-api. All rights reserved.</p>
-        </div>
-      </footer>
-
-      {/* Lightbox */}
-      {lightboxItems && (
-        <Lightbox items={lightboxItems} startIndex={lightboxIndex} onClose={() => setLightboxItems(null)} />
-      )}
-
-      {/* Floating Buttons: Cart & Past Orders */}
-      {(totalItems > 0 || pastOrders.length > 0) && !isCartOpen && !isOrdersOpen && (
-        <div className="fixed bottom-6 inset-x-0 mx-auto w-fit z-40 animate-in slide-in-from-bottom-5 flex items-center gap-3">
+      {/* Floating Buttons */}
+      {(totalItems > 0 || (pastOrders && pastOrders.length > 0)) && !isCartOpen && !isOrdersOpen && (
+        <div className="fixed bottom-6 inset-x-0 mx-auto w-fit z-40 flex items-center gap-3 px-4">
           {totalItems > 0 && (
             <button
               onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-3 px-6 py-3.5 bg-primary text-primary-foreground rounded-full font-medium shadow-2xl hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all w-fit"
+              className="flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3.5 bg-primary text-white rounded-full font-bold shadow-2xl hover:scale-105 transition-all"
             >
-              <div className="relative">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
-                  {totalItems}
-                </span>
-              </div>
-              <span>{formatRupiah(totalPrice)}</span>
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+              </svg>
+              <span className="hidden md:inline">Keranjang</span>
+              <span className="bg-white text-primary px-2 py-0.5 rounded-full text-xs md:text-sm">
+                {totalItems}
+              </span>
+              <span className="hidden md:inline">- {formatRupiah(totalPrice)}</span>
             </button>
           )}
-
-          {pastOrders.length > 0 && (
+          {pastOrders && pastOrders.length > 0 && (
             <button
               onClick={() => setIsOrdersOpen(true)}
-              className="flex items-center gap-2 px-6 py-3.5 bg-yellow-600 text-white rounded-full font-medium shadow-2xl hover:bg-yellow-700 hover:scale-105 active:scale-95 transition-all w-fit"
+              className="flex items-center gap-2 px-4 md:px-6 py-3.5 bg-yellow-600 text-white rounded-full font-bold shadow-2xl hover:scale-105 transition-all text-sm md:text-base"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              <span>Pesanan Saya ({pastOrders.length})</span>
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span className="hidden md:inline">Riwayat</span>
             </button>
           )}
         </div>
       )}
 
-      {/* Past Orders Modal */}
-      {isOrdersOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm" onClick={() => setIsOrdersOpen(false)}>
-          <div className="w-full max-w-md h-full bg-background shadow-2xl flex flex-col animate-in slide-in-from-right" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between bg-card text-foreground">
-              <h2 className="text-lg font-bold">Riwayat Pesanan</h2>
-              <button onClick={() => setIsOrdersOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+      {/* Cart Sidebar */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-[60] flex justify-end">
+          <div className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm" onClick={() => setIsCartOpen(false)} />
+          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-primary/5">
+            <div className="p-6 border-b border-primary/5 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-primary">Pesanan Anda</h2>
+              <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-surface-container-low rounded-full transition-colors text-primary">
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
             </div>
-            
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5 bg-muted/20">
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {cart.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="w-20 h-20 bg-surface-container-low rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-primary/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
+                  </div>
+                  <p className="text-on-surface-variant font-medium">Keranjang masih kosong</p>
+                  <button onClick={() => setIsCartOpen(false)} className="mt-4 text-primary font-bold hover:underline">Mulai Belanja</button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {cart.map((item) => (
+                      <div key={item.menu.id} className="flex gap-4 p-4 rounded-xl border border-primary/5 bg-surface-container-low/50">
+                        <div className="w-20 h-20 rounded-lg overflow-hidden bg-white shrink-0 shadow-sm">
+                          {item.menu.foto?.[0] ? (
+                            <img src={item.menu.foto[0].url} alt={item.menu.nama} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                               <svg className="w-8 h-8 text-primary/10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-1">
+                            <h4 className="font-bold text-primary line-clamp-1">{item.menu.nama}</h4>
+                            <button onClick={() => removeFromCart(item.menu.id)} className="text-on-surface-variant hover:text-red-500 transition-colors">
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                            </button>
+                          </div>
+                          <p className="text-sm font-bold text-primary mb-3">{formatRupiah(item.menu.harga)}</p>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => updateCartItem(item.menu.id, { quantity: Math.max(1, item.quantity - 1) })}
+                              className="w-8 h-8 rounded-lg border border-primary/10 flex items-center justify-center bg-white text-primary font-bold transition-all shadow-sm"
+                            >
+                              -
+                            </button>
+                            <span className="font-bold text-primary w-4 text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateCartItem(item.menu.id, { quantity: item.quantity + 1 })}
+                              className="w-8 h-8 rounded-lg border border-primary/10 flex items-center justify-center bg-white text-primary font-bold transition-all shadow-sm"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Customer Information Form */}
+                  <div className="pt-6 border-t border-primary/5 space-y-4">
+                    <h3 className="font-bold text-primary">Informasi Pengiriman</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-bold text-primary/60 uppercase tracking-widest block mb-2">Nama Penerima</label>
+                        <input
+                          type="text"
+                          value={customerForm.name}
+                          onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })}
+                          className="w-full px-4 py-3 bg-surface-container-low border border-primary/5 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
+                          placeholder="Masukkan nama Anda..."
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-primary/60 uppercase tracking-widest block mb-2">No. WhatsApp/HP</label>
+                        <input
+                          type="tel"
+                          value={customerForm.phone}
+                          onChange={(e) => setCustomerForm({ ...customerForm, phone: e.target.value })}
+                          className="w-full px-4 py-3 bg-surface-container-low border border-primary/5 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
+                          placeholder="Contoh: 081234567..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="p-8 border-t border-primary/5 bg-surface-container-low/30 space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-on-surface-variant font-medium text-lg">Total Bayar</span>
+                <span className="text-3xl font-bold text-primary">{formatRupiah(totalPrice)}</span>
+              </div>
+              <button
+                disabled={isSubmitting || cart.length === 0}
+                onClick={submitOrder}
+                className="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-opacity-90 transition-all shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white animate-spin rounded-full" />
+                ) : (
+                  'Konfirmasi & Pesan Sekarang'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Past Orders Sidebar */}
+      {isOrdersOpen && (
+        <div className="fixed inset-0 z-[60] flex justify-end">
+          <div className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm" onClick={() => setIsOrdersOpen(false)} />
+          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-primary/5">
+            <div className="p-6 border-b border-primary/5 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-primary">Riwayat Pesanan</h2>
+              <button onClick={() => setIsOrdersOpen(false)} className="p-2 hover:bg-surface-container-low rounded-full transition-colors text-primary">
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {isLoadingOrders ? (
-                <div className="flex justify-center p-10">
-                  <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                <div className="flex justify-center py-20">
+                  <div className="w-10 h-10 border-4 border-primary/10 border-t-primary animate-spin rounded-full" />
                 </div>
               ) : pastOrders.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-10">Belum ada riwayat pesanan.</p>
+                <div className="text-center py-20">
+                   <div className="w-20 h-20 bg-surface-container-low rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-primary/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                  </div>
+                  <p className="text-on-surface-variant font-medium">Belum ada riwayat pesanan</p>
+                </div>
               ) : (
                 pastOrders.map((order) => (
-                  <div key={order.id} className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm">
-                    <div className="px-4 py-3 border-b border-border/60 bg-muted/30 flex justify-between items-start">
+                  <div key={order.id} className="p-5 rounded-2xl border border-primary/5 bg-surface-container-low/50 shadow-sm space-y-4">
+                    <div className="flex justify-between items-start">
                       <div>
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">{order.order_number}</p>
-                        <p className="text-xs text-muted-foreground">
-                           {new Date(order.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                        <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">PESANAN #{order.order_number.slice(-6).toUpperCase()}</p>
+                        <p className="text-sm font-medium text-on-surface-variant">
+                          {new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
                       </div>
-                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                        order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                        order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                        'bg-blue-100 text-blue-700'
+                      <span className={`px-3 py-1 text-[10px] font-bold rounded-full uppercase ${
+                        order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-primary/10 text-primary'
                       }`}>
                         {order.status}
                       </span>
                     </div>
-                    
-                    <div className="p-4 space-y-3">
-                      <div className="space-y-2">
-                        {order.order_menus?.map((item, idx) => (
-                          <div key={idx} className="flex justify-between items-start gap-4">
-                            <div className="flex-1 min-w-0">
-                               <p className="text-sm font-medium text-foreground line-clamp-1">{item.quantity}x {item.menu?.nama}</p>
-                               {item.notes && <p className="text-xs text-muted-foreground mt-0.5">Catatan: {item.notes}</p>}
-                            </div>
-                            <p className="text-sm font-medium shrink-0">{formatRupiah(item.total_price)}</p>
-                          </div>
-                        ))}
-                      </div>
+
+                    <div className="space-y-3 pt-2 border-t border-primary/5">
+                      {order.order_menus?.map((item, i) => (
+                        <div key={i} className="flex justify-between text-sm">
+                          <span className="text-on-surface-variant font-medium">
+                            <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded mr-2">{item.quantity}x</span>
+                            {item.menu?.nama}
+                          </span>
+                          <span className="text-primary font-bold">{formatRupiah(item.total_price)}</span>
+                        </div>
+                      ))}
                     </div>
-                    
-                    <div className="px-4 py-3 bg-muted/10 flex justify-between items-center border-t border-border/60">
-                       <span className="text-sm font-semibold text-foreground">Total</span>
-                       <span className="text-sm font-bold text-primary">{formatRupiah(order.total_price)}</span>
+
+                    <div className="flex justify-between items-center pt-3 border-t border-primary/5">
+                      <span className="font-bold text-primary">Total Bayar</span>
+                      <span className="text-xl font-bold text-primary">{formatRupiah(order.total_price)}</span>
                     </div>
                   </div>
                 ))
@@ -774,115 +845,45 @@ export default function ShopDetailPage({ params }: { params: any }) {
         </div>
       )}
 
-      {/* Checkout Modal */}
-      {isCartOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}>
-          <div className="w-full max-w-md h-full bg-background shadow-2xl flex flex-col animate-in slide-in-from-right" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between bg-card text-foreground">
-              <h2 className="text-lg font-bold">Keranjang Pesanan ({totalItems})</h2>
-              <button onClick={() => setIsCartOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
-              </button>
+      {/* Lightbox */}
+      {lightboxFotos && (
+        <Lightbox fotos={lightboxFotos} startIndex={lightboxIndex} onClose={() => setLightboxFotos(null)} />
+      )}
+
+      {/* Footer */}
+      <footer className="bg-primary py-20 mt-20">
+        <div className="max-w-5xl mx-auto px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-white">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center gap-2">
+                <div className="bg-white p-2 rounded-lg text-primary shadow-lg">
+                  <svg fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path><line x1="6" x2="6" y1="2" y2="4"></line><line x1="10" x2="10" y1="2" y2="4"></line><line x1="14" x2="14" y1="2" y2="4"></line></svg>
+                </div>
+                <span className="text-2xl font-bold tracking-tighter">CariKopi</span>
+              </div>
+              <p className="text-white/70 max-w-sm leading-relaxed">
+                Platform kurasi coffee shop terbaik di Indonesia. Menemukan ruang kerja, tempat kumpul, dan kopi berkualitas hanya dalam satu klik.
+              </p>
             </div>
             
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-              {/* Cart Items */}
-              <div className="space-y-4">
-                {cart.map((item) => (
-                  <div key={item.menu.id} className="flex gap-4 p-3 bg-muted/50 rounded-xl border border-border/40">
-                    <div className="w-16 h-16 rounded-lg bg-border flex-shrink-0 overflow-hidden">
-                      {item.menu.foto?.[0] ? (
-                        <img src={item.menu.foto[0].url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-brown-100 text-lg">☕</div>
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-semibold text-sm line-clamp-1 pr-2 text-foreground">{item.menu.nama}</h4>
-                        <button onClick={() => removeFromCart(item.menu.id)} className="text-red-500 hover:text-red-700 flex-shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        </button>
-                      </div>
-                      <p className="text-primary font-medium text-sm">{formatRupiah(item.menu.harga)}</p>
-                      <div className="flex flex-col gap-2 pt-2">
-                        <div className="flex items-center border rounded-lg overflow-hidden bg-background w-fit">
-                          <button
-                            onClick={() => updateCartItem(item.menu.id, { quantity: Math.max(1, item.quantity - 1) })}
-                            className="w-7 h-7 flex items-center justify-center hover:bg-muted font-medium text-foreground"
-                          >
-                            -
-                          </button>
-                          <span className="w-8 text-center text-sm font-medium text-foreground">{item.quantity}</span>
-                          <button
-                            onClick={() => updateCartItem(item.menu.id, { quantity: item.quantity + 1 })}
-                            className="w-7 h-7 flex items-center justify-center hover:bg-muted font-medium text-foreground"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <input 
-                          type="text" 
-                          placeholder="Catatan (opsional)..."
-                          value={item.notes}
-                          onChange={(e) => updateCartItem(item.menu.id, { notes: e.target.value })}
-                          className="w-full text-xs px-2.5 py-2 rounded-md border border-border/60 bg-background focus:outline-none focus:border-primary/50 text-foreground"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Customer Form */}
-              <div className="space-y-3 pt-4 border-t border-border/60 bg-transparent">
-                <h3 className="font-semibold text-sm text-foreground">Informasi Pemesan</h3>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1">Nama Pemesan</label>
-                  <input 
-                    type="text" 
-                    value={customerForm.name}
-                    onChange={(e) => setCustomerForm({...customerForm, name: e.target.value})}
-                    placeholder="Contoh: Budi"
-                    className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-foreground bg-background"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1">No. WhatsApp/HP</label>
-                  <input 
-                    type="tel" 
-                    value={customerForm.phone}
-                    onChange={(e) => setCustomerForm({...customerForm, phone: e.target.value})}
-                    placeholder="Contoh: 08123456789"
-                    className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-foreground bg-background"
-                  />
-                </div>
-              </div>
+            <div className="space-y-6">
+              <h4 className="text-lg font-bold">Layanan Kami</h4>
+              <ul className="space-y-4 text-white/70 text-sm">
+                <li><Link href="/" className="hover:text-white transition-colors">Cari Kedai Terdekat</Link></li>
+                <li><button onClick={() => setIsCartOpen(true)} className="hover:text-white transition-colors">Pesan Online</button></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Daftarkan Toko</Link></li>
+              </ul>
             </div>
 
-            <div className="p-6 border-t border-border/60 bg-muted/30">
-              <div className="flex justify-between items-center mb-4">
-                <span className="font-semibold text-foreground">Total Tagihan</span>
-                <span className="text-xl font-bold text-primary">{formatRupiah(totalPrice)}</span>
-              </div>
-              <button 
-                onClick={submitOrder}
-                disabled={isSubmitting || cart.length === 0}
-                className="w-full py-3.5 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 transition-all"
-              >
-                {isSubmitting ? (
-                   <>
-                     <div className="w-4 h-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />
-                     Memproses...
-                   </>
-                ) : (
-                  'Konfirmasi Pesanan'
-                )}
-              </button>
+            <div className="space-y-6">
+              <h4 className="text-lg font-bold">Tentang Kami</h4>
+              <p className="text-white/70 text-sm leading-relaxed">
+                © 2026 CariKopi Indonesia. Dibuat dengan cinta untuk pecinta kopi Nusantara.
+              </p>
             </div>
           </div>
         </div>
-      )}
+      </footer>
     </div>
   );
 }
