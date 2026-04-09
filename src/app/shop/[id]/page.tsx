@@ -50,18 +50,18 @@ interface OrderMenu {
     harga: number;
   };
   quantity: number;
-  totalPrice: number;
+  total_price: number;
   notes: string;
 }
 
 interface PastOrder {
   id: string;
   name: string;
-  orderNumber: string;
+  order_number: string;
   status: string;
-  totalPrice: number;
-  createdAt: string;
-  orderMenus: OrderMenu[];
+  total_price: number;
+  created_at: string;
+  order_menus: OrderMenu[];
 }
 
 function formatRupiah(value: number): string {
@@ -70,35 +70,42 @@ function formatRupiah(value: number): string {
 
 // ── Photo Lightbox ──
 
-function Lightbox({ fotos, startIndex, onClose }: { fotos: FotoItem[]; startIndex: number; onClose: () => void }) {
+function Lightbox({ items, startIndex, onClose }: { items: { url: string; caption?: string }[]; startIndex: number; onClose: () => void }) {
   const [current, setCurrent] = useState(startIndex);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
       <div className="relative max-w-4xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
-        <img src={fotos[current].url} alt="" className="w-full max-h-[80vh] object-contain rounded-2xl" />
+        <img src={items[current].url} alt={items[current].caption || ''} className="w-full max-h-[80vh] object-contain rounded-2xl" />
+
+        {/* Caption */}
+        {items[current].caption && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-12 rounded-b-2xl">
+            <h3 className="text-white text-lg font-semibold text-center">{items[current].caption}</h3>
+          </div>
+        )}
 
         {/* Controls */}
-        <button onClick={onClose} className="absolute top-3 right-3 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70">
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        <button onClick={onClose} className="absolute top-4 right-4 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors z-10 font-bold backdrop-blur-md">
+          ✕
         </button>
 
-        {fotos.length > 1 && (
+        {items.length > 1 && (
           <>
             <button
-              onClick={() => setCurrent((c) => (c - 1 + fotos.length) % fotos.length)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70"
+              onClick={() => setCurrent((c) => (c - 1 + items.length) % items.length)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-all z-10 backdrop-blur-md"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
             <button
-              onClick={() => setCurrent((c) => (c + 1) % fotos.length)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70"
+              onClick={() => setCurrent((c) => (c + 1) % items.length)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-all z-10 backdrop-blur-md"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
             </button>
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full">
-              {current + 1} / {fotos.length}
+            <div className="absolute top-4 left-4 bg-black/50 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md">
+              {current + 1} / {items.length}
             </div>
           </>
         )}
@@ -109,17 +116,21 @@ function Lightbox({ fotos, startIndex, onClose }: { fotos: FotoItem[]; startInde
 
 // ── Main Page ──
 
-export default function ShopDetailPage() {
-  const params = useParams();
-  const shopId = params.id as string;
-
+export default function ShopDetailPage({ params }: { params: any }) {
+  const nextParams = useParams();
+  
+  // Robust Shop ID detection for usage in all functions
+  const shopId = (nextParams?.id as string) || 
+                 (typeof window !== 'undefined' ? window.location.pathname.match(/\/shop\/([^\s\/]+)/)?.[1] : '') ||
+                 '';
   const [shop, setShop] = useState<ShopDetail | null>(null);
   const [menus, setMenus] = useState<MenuItemPublic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [hasMounted, setHasMounted] = useState(false);
 
   // Lightbox
-  const [lightboxFotos, setLightboxFotos] = useState<FotoItem[] | null>(null);
+  const [lightboxItems, setLightboxItems] = useState<{ url: string; caption?: string }[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Cart & Order
@@ -128,6 +139,10 @@ export default function ShopDetailPage() {
   const [customerForm, setCustomerForm] = useState({ name: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
+
+  // Tabs
+  const [activeTab, setActiveTab] = useState<'menu' | 'gallery'>('menu');
+  const [galleries, setGalleries] = useState<GalleryItemPublic[]>([]);
 
   // Past Orders
   const [pastOrders, setPastOrders] = useState<PastOrder[]>([]);
@@ -229,46 +244,117 @@ export default function ShopDetailPage() {
     setIsSubmitting(false);
   };
 
+  // Unified Loading and ID Detection Effect
   useEffect(() => {
-    if (!shopId) return;
+    let isMounted = true;
+    const controller = new AbortController();
+    
+    // Safety Force-Stop Loading Spinner after 12 seconds
+    const globalTimeout = setTimeout(() => {
+      if (isMounted) setIsLoading(false);
+    }, 12000);
 
-    const load = async () => {
+    const initialize = async () => {
+      setHasMounted(true);
       setIsLoading(true);
+      setError('');
+
       try {
-        // Fetch shop detail
-        const shopRes = await fetch(`/api/public/coffeeshop/${shopId}/detail-shop`);
-        const shopBody = await shopRes.json();
+        // 1. Resolve Shop ID
+        let id = '';
+        
+        // A. From Props (Handle potential Promise in Next.js 15)
+        if (params) {
+          if (typeof params.then === 'function') {
+            const resolved = await params;
+            id = resolved?.id;
+          } else {
+            id = params.id;
+          }
+        }
 
-        if (shopBody.status === 'OK' && shopBody.data) {
-          setShop(shopBody.data);
+        // B. From Hook fallback
+        if (!id && nextParams?.id) {
+          id = nextParams.id as string;
+        }
+
+        // C. From URL hard fallback (Regex search for UUID or ID after /shop/)
+        if (!id || id === '[id]') {
+          if (typeof window !== 'undefined') {
+            const match = window.location.pathname.match(/\/shop\/([^\s\/]+)/);
+            if (match && match[1]) id = match[1];
+          }
+        }
+
+        if (!id || id === '[id]') return; // Wait for next cycle
+
+        // 2. Data Fetching helper
+        const fetchData = async (url: string) => {
+          try {
+            const res = await fetch(url, { signal: controller.signal });
+            if (!res.ok) return null;
+            return await res.json();
+          } catch { return null; }
+        };
+
+        const [shopData, menuData, galleryData] = await Promise.all([
+          fetchData(`/api/public/coffeeshop/${id}/detail-shop`),
+          fetchData(`/api/public/coffeeshop/${id}/menu`),
+          fetchData(`/api/public/galleries/${id}`)
+        ]);
+
+        if (!isMounted) return;
+
+        if (shopData && shopData.status === 'OK') {
+          setShop(shopData.data);
         } else {
-          setError('Coffee shop tidak ditemukan.');
+          setError('Toko tidak ditemukan.');
+        }
+
+        if (menuData && menuData.data) setMenus(menuData.data);
+        if (galleryData && galleryData.data) setGalleries(galleryData.data);
+
+        // Fetch past orders in background
+        const session = localStorage.getItem('unique_session');
+        if (session) {
+          fetchData(`/api/public/orders/get-by-unique-session/${session}/${id}`).then(data => {
+            if (isMounted && data?.data) setPastOrders(data.data);
+          });
+        }
+
+      } catch (err: any) {
+        if (isMounted && err.name !== 'AbortError') {
+          console.error('Loading failed:', err);
+          setError('Gagal memuat data.');
+        }
+      } finally {
+        if (isMounted) {
           setIsLoading(false);
-          return;
+          clearTimeout(globalTimeout);
         }
-
-        // Fetch menu
-        const menuRes = await fetch(`/api/public/coffeeshop/${shopId}/menu`);
-        const menuBody = await menuRes.json();
-        if (menuBody.status === 'OK' && menuBody.data) {
-          setMenus(menuBody.data);
-        }
-
-        // Ambil riwayat pesanan (async background)
-        fetchPastOrders();
-      } catch {
-        setError('Gagal memuat data coffee shop.');
       }
-      setIsLoading(false);
     };
 
-    load();
-  }, [shopId]);
+    initialize();
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearTimeout(globalTimeout);
+    };
+  }, [params, nextParams]);
 
-  const openLightbox = (fotos: FotoItem[], index: number) => {
-    setLightboxFotos(fotos);
+  const openLightbox = (items: { url: string; caption?: string }[], index: number) => {
+    setLightboxItems(items);
     setLightboxIndex(index);
   };
+
+  if (!hasMounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full border-4 border-brown-200 border-t-primary animate-spin" />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -438,114 +524,139 @@ export default function ShopDetailPage() {
         </div>
       </div>
 
-      {/* Menu Section */}
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground">
+      {/* Tab Switcher */}
+      <div className="max-w-5xl mx-auto px-6 mt-8">
+        <div className="flex border-b border-border/40 gap-8">
+          <button
+            onClick={() => setActiveTab('menu')}
+            className={`pb-4 text-lg font-bold transition-all relative ${
+              activeTab === 'menu' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
             Menu
-            {filteredMenus.length > 0 && (
-              <span className="ml-2 text-sm font-normal text-muted-foreground">({filteredMenus.length} item)</span>
+            {activeTab === 'menu' && (
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />
             )}
-          </h2>
+            {menus.length > 0 && (
+              <span className="ml-2 text-xs font-normal opacity-60">({menus.length})</span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('gallery')}
+            className={`pb-4 text-lg font-bold transition-all relative ${
+              activeTab === 'gallery' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Galeri
+            {activeTab === 'gallery' && (
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />
+            )}
+            {galleries.length > 0 && (
+              <span className="ml-2 text-xs font-normal opacity-60">({galleries.length})</span>
+            )}
+          </button>
         </div>
+      </div>
 
-        {/* Menu Search Field */}
-        <div className="mb-6 relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input
-            type="text"
-            placeholder="Cari nama menu..."
-            value={menuSearchQuery}
-            onChange={(e) => setMenuSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-border/60 rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm text-foreground transition-all"
-          />
-        </div>
-
-        {filteredMenus.length === 0 ? (
-          <div className="bg-card rounded-2xl border border-border/60 p-10 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-brown-100 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 text-brown-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-                <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
-              </svg>
+      {/* Content Section */}
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        {activeTab === 'menu' ? (
+          <div className="space-y-6">
+            {/* Menu Search Field */}
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                type="text"
+                placeholder="Cari nama menu..."
+                value={menuSearchQuery}
+                onChange={(e) => setMenuSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-border/60 rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm text-foreground transition-all"
+              />
             </div>
-            <p className="text-muted-foreground text-sm">
-              {menuSearchQuery ? 'Menu tidak ditemukan.' : 'Belum ada menu yang tersedia.'}
-            </p>
+
+            {filteredMenus.length === 0 ? (
+              <div className="bg-card rounded-2xl border border-border/60 p-10 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-brown-100 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-7 h-7 text-brown-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+                    <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
+                  </svg>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  {menuSearchQuery ? 'Menu tidak ditemukan.' : 'Belum ada menu yang tersedia.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredMenus.map((menu) => {
+                  const thumb = menu.foto?.[0];
+                  return (
+                    <div key={menu.id} className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden hover:shadow-md transition-all duration-200">
+                      {/* Image */}
+                      <div
+                        className={`aspect-[4/3] bg-brown-100 relative overflow-hidden ${thumb ? 'cursor-pointer' : ''}`}
+                        onClick={() => {
+                          if (menu.foto?.length > 0) {
+                            openLightbox(menu.foto.map(f => ({ url: f.url, caption: menu.nama })), 0);
+                          }
+                        }}
+                      >
+                        {thumb ? (
+                          <img src={thumb.url} alt={menu.nama} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <svg className="w-10 h-10 text-brown-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="p-3 space-y-1.5">
+                        <h3 className="font-semibold text-foreground text-sm line-clamp-1">{menu.nama}</h3>
+                        <p className="text-primary font-bold text-base">{formatRupiah(menu.harga)}</p>
+                        
+                        <div className="pt-2">
+                           <button
+                             onClick={() => addToCart(menu)}
+                             className="w-full py-1.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors text-xs flex items-center justify-center gap-1.5"
+                           >
+                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
+                             Tambah
+                           </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredMenus.map((menu) => {
-              const thumb = menu.foto?.[0];
-              return (
-                <div key={menu.id} className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden hover:shadow-md transition-shadow duration-200">
-                  {/* Image */}
+          /* Gallery Content */
+          <div className="space-y-6">
+            {galleries.length === 0 ? (
+              <div className="bg-card rounded-2xl border border-border/60 p-12 text-center">
+                <p className="text-muted-foreground">Belum ada foto galeri.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {galleries.map((item, index) => (
                   <div
-                    className={`aspect-[4/3] bg-brown-100 relative overflow-hidden ${thumb ? 'cursor-pointer' : ''}`}
-                    onClick={() => {
-                      if (menu.foto?.length > 0) openLightbox(menu.foto, 0);
-                    }}
+                    key={item.id}
+                    onClick={() => openLightbox(galleries.map(g => ({ url: g.foto.url, caption: g.nama })), index)}
+                    className="aspect-square bg-brown-100 rounded-2xl overflow-hidden border border-border/60 cursor-pointer group"
                   >
-                    {thumb ? (
-                      <img src={thumb.url} alt={menu.nama} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <svg className="w-12 h-12 text-brown-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-                          <line x1="6" y1="2" x2="6" y2="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="14" y1="2" x2="14" y2="4" />
-                        </svg>
-                      </div>
-                    )}
-                    {menu.foto?.length > 1 && (
-                      <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">
-                        {menu.foto.length} foto
-                      </div>
-                    )}
+                    <img
+                      src={item.foto.url}
+                      alt={item.nama}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
                   </div>
-
-                  {/* Info */}
-                  <div className="p-4 space-y-2">
-                    <h3 className="font-semibold text-foreground text-base">{menu.nama}</h3>
-                    <p className="text-primary font-bold text-lg">{formatRupiah(menu.harga)}</p>
-                    {menu.deskripsi && (
-                      <p className="text-muted-foreground text-sm line-clamp-2">{menu.deskripsi}</p>
-                    )}
-
-                    {/* Photo thumbnails */}
-                    {menu.foto?.length > 1 && (
-                      <div className="flex gap-1.5 pt-1">
-                        {menu.foto.slice(0, 4).map((foto, i) => (
-                          <button
-                            key={foto.id}
-                            onClick={() => openLightbox(menu.foto, i)}
-                            className="w-10 h-10 rounded-lg overflow-hidden border border-border/60 hover:opacity-80 transition-opacity relative"
-                          >
-                            <img src={foto.url} alt="" className="w-full h-full object-cover" />
-                            {i === 3 && menu.foto.length > 4 && (
-                              <div className="absolute inset-0 bg-black/50 text-white text-xs flex items-center justify-center font-medium">
-                                +{menu.foto.length - 4}
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Add to Cart button */}
-                    <div className="pt-2">
-                       <button
-                         onClick={() => addToCart(menu)}
-                         className="w-full py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm flex items-center justify-center gap-2"
-                       >
-                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
-                         Tambah ke Keranjang
-                       </button>
-                    </div>
-
-                  </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -566,8 +677,8 @@ export default function ShopDetailPage() {
       </footer>
 
       {/* Lightbox */}
-      {lightboxFotos && (
-        <Lightbox fotos={lightboxFotos} startIndex={lightboxIndex} onClose={() => setLightboxFotos(null)} />
+      {lightboxItems && (
+        <Lightbox items={lightboxItems} startIndex={lightboxIndex} onClose={() => setLightboxItems(null)} />
       )}
 
       {/* Floating Buttons: Cart & Past Orders */}
@@ -623,9 +734,9 @@ export default function ShopDetailPage() {
                   <div key={order.id} className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm">
                     <div className="px-4 py-3 border-b border-border/60 bg-muted/30 flex justify-between items-start">
                       <div>
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">{order.orderNumber}</p>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">{order.order_number}</p>
                         <p className="text-xs text-muted-foreground">
-                           {new Date(order.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                           {new Date(order.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
                         </p>
                       </div>
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
@@ -639,13 +750,13 @@ export default function ShopDetailPage() {
                     
                     <div className="p-4 space-y-3">
                       <div className="space-y-2">
-                        {order.orderMenus.map((item) => (
-                          <div key={item.id} className="flex justify-between items-start gap-4">
+                        {order.order_menus?.map((item, idx) => (
+                          <div key={idx} className="flex justify-between items-start gap-4">
                             <div className="flex-1 min-w-0">
-                               <p className="text-sm font-medium text-foreground line-clamp-1">{item.quantity}x {item.menu.nama}</p>
+                               <p className="text-sm font-medium text-foreground line-clamp-1">{item.quantity}x {item.menu?.nama}</p>
                                {item.notes && <p className="text-xs text-muted-foreground mt-0.5">Catatan: {item.notes}</p>}
                             </div>
-                            <p className="text-sm font-medium shrink-0">{formatRupiah(item.totalPrice)}</p>
+                            <p className="text-sm font-medium shrink-0">{formatRupiah(item.total_price)}</p>
                           </div>
                         ))}
                       </div>
@@ -653,7 +764,7 @@ export default function ShopDetailPage() {
                     
                     <div className="px-4 py-3 bg-muted/10 flex justify-between items-center border-t border-border/60">
                        <span className="text-sm font-semibold text-foreground">Total</span>
-                       <span className="text-sm font-bold text-primary">{formatRupiah(order.totalPrice)}</span>
+                       <span className="text-sm font-bold text-primary">{formatRupiah(order.total_price)}</span>
                     </div>
                   </div>
                 ))

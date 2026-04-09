@@ -323,6 +323,64 @@ export const menuApi = {
   },
 };
 
+// ── Gallery Types ──
+
+export interface GalleryFoto {
+  id: string;
+  filename: string;
+  url: string;
+}
+
+export interface GalleryItem {
+  id: string;
+  nama: string;
+  foto: GalleryFoto;
+}
+
+export const galleryApi = {
+  getByShop: (token: string, shopId: string) =>
+    request<GalleryItem[]>(`/api/galleries/${shopId}`, {
+      headers: createAuthHeaders(token),
+    }),
+
+  submit: async (token: string, shopId: string, nama: string, foto: File): Promise<ApiResponse<GalleryItem>> => {
+    const formData = new FormData();
+    formData.append('nama', nama);
+    formData.append('foto', foto);
+
+    try {
+      const response = await fetch(`/api/galleries/${shopId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok || data.status === 'ERROR') {
+        return { success: false, message: data.errors || 'Submit gagal' };
+      }
+      return { success: true, data: data.data ?? undefined };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Network error' };
+    }
+  },
+
+  delete: async (token: string, galleryId: string, shopId: string): Promise<ApiResponse<void>> => {
+    try {
+      const response = await fetch(`/api/galleries/${galleryId}/${shopId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (!response.ok || data.status === 'ERROR') {
+        return { success: false, message: data.errors || 'Hapus galeri gagal' };
+      }
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Network error' };
+    }
+  },
+};
+
 // ── Order Types ──
 
 export interface OrderMenu {

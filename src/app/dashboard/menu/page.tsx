@@ -57,37 +57,38 @@ function MenuCard({
       </div>
 
       {/* Info */}
-      <div className="p-4 space-y-2">
-        <h3 className="font-semibold text-foreground text-base truncate">{menu.nama}</h3>
-        <p className="text-primary font-bold text-lg">{formatRupiah(menu.harga)}</p>
-        <p className="text-muted-foreground text-sm line-clamp-2">{menu.deskripsi || '-'}</p>
-
+      <div className="p-3 space-y-1.5">
+        <h3 className="font-semibold text-foreground text-sm truncate">{menu.nama}</h3>
+        <p className="text-primary font-bold text-base">{formatRupiah(menu.harga)}</p>
+        <p className="text-muted-foreground text-xs line-clamp-1">{menu.deskripsi || '-'}</p>
+ 
         {/* Actions */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-1.5 pt-1.5">
           <button
             onClick={onEdit}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-secondary text-secondary-foreground text-sm font-medium rounded-xl hover:bg-brown-200 transition-all duration-200"
+            title="Edit"
+            className="flex-1 flex items-center justify-center p-2 bg-secondary text-secondary-foreground rounded-xl hover:bg-brown-200 transition-all duration-200"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
-            Edit
           </button>
           <button
             onClick={onFoto}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-secondary text-secondary-foreground text-sm font-medium rounded-xl hover:bg-brown-200 transition-all duration-200"
+            title="Kelola Foto"
+            className="flex-1 flex items-center justify-center p-2 bg-secondary text-secondary-foreground rounded-xl hover:bg-brown-200 transition-all duration-200"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
               <polyline points="21 15 16 10 5 21" />
             </svg>
-            Foto
           </button>
           <button
             onClick={onDelete}
-            className="px-3 py-2 text-red-600 bg-red-50 text-sm font-medium rounded-xl hover:bg-red-100 transition-all duration-200"
+            title="Hapus"
+            className="p-2 text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-all duration-200"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="3 6 5 6 21 6" />
@@ -397,7 +398,7 @@ export default function MenuPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {menus.map((menu) => (
             <MenuCard
               key={menu.id}
