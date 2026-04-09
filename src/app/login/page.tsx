@@ -25,7 +25,7 @@ export default function LoginPage() {
 
       if (result.success && result.data) {
         login(result.data.token, username, result.data.role);
-        router.push('/dashboard');
+        router.push('/dashboard/menu');
       } else {
         setError(result.message || 'Login gagal. Periksa kembali username dan password.');
       }
