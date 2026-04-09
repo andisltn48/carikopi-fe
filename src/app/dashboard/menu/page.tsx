@@ -32,7 +32,20 @@ function MenuCard({
   const thumb = menu.foto?.[0];
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden group hover:shadow-md transition-shadow duration-200">
+    <div className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden relative">
+      {/* Favorite Badge */}
+      {menu.isFavorite && (
+        <div className="absolute top-2 left-2 z-10 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+          <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          FAVORITE
+        </div>
+      )}
+      {/* Category Badge */}
+      {menu.category && (
+        <div className="absolute top-2 right-2 z-10 bg-white/80 backdrop-blur px-2 py-0.5 rounded-full text-[10px] font-bold text-primary shadow-sm tracking-wider uppercase">
+          {menu.category}
+        </div>
+      )}
       {/* Image */}
       <div className="aspect-[4/3] bg-brown-100 relative overflow-hidden">
         {thumb ? (
@@ -67,7 +80,7 @@ function MenuCard({
           <button
             onClick={onEdit}
             title="Edit"
-            className="flex-1 flex items-center justify-center p-2 bg-secondary text-secondary-foreground rounded-xl hover:bg-brown-200 transition-all duration-200"
+            className="flex-1 flex items-center justify-center p-2 bg-secondary text-secondary-foreground rounded-xl"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -77,7 +90,7 @@ function MenuCard({
           <button
             onClick={onFoto}
             title="Kelola Foto"
-            className="flex-1 flex items-center justify-center p-2 bg-secondary text-secondary-foreground rounded-xl hover:bg-brown-200 transition-all duration-200"
+            className="flex-1 flex items-center justify-center p-2 bg-secondary text-secondary-foreground rounded-xl"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -88,7 +101,7 @@ function MenuCard({
           <button
             onClick={onDelete}
             title="Hapus"
-            className="p-2 text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-all duration-200"
+            className="p-2 text-red-600 bg-red-50 rounded-xl"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="3 6 5 6 21 6" />
@@ -120,6 +133,8 @@ export default function MenuPage() {
   const [nama, setNama] = useState('');
   const [harga, setHarga] = useState('');
   const [deskripsi, setDeskripsi] = useState('');
+  const [category, setCategory] = useState('kopi');
+  const [isFavorite, setIsFavorite] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const menuFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -127,6 +142,8 @@ export default function MenuPage() {
   const [showFotoModal, setShowFotoModal] = useState(false);
   const [fotoMenu, setFotoMenu] = useState<MenuItem | null>(null);
   const [isUploadingFoto, setIsUploadingFoto] = useState(false);
+  const [menuSearchQuery, setMenuSearchQuery] = useState('');
+  const [activeMenuCategory, setActiveMenuCategory] = useState('Semua');
   const fotoInputRef = useRef<HTMLInputElement>(null);
 
   // Delete confirmation
@@ -171,6 +188,8 @@ export default function MenuPage() {
     setNama('');
     setHarga('');
     setDeskripsi('');
+    setCategory('kopi');
+    setIsFavorite(false);
     setSelectedFiles([]);
     setError('');
     setShowModal(true);
@@ -181,6 +200,8 @@ export default function MenuPage() {
     setNama(menu.nama);
     setHarga(menu.harga.toString());
     setDeskripsi(menu.deskripsi || '');
+    setCategory(menu.category || 'kopi');
+    setIsFavorite(menu.isFavorite || false);
     setSelectedFiles([]);
     setError('');
     setShowModal(true);
@@ -197,6 +218,8 @@ export default function MenuPage() {
       nama,
       harga: parseInt(harga) || 0,
       deskripsi,
+      category,
+      isFavorite,
     };
 
     let result;
@@ -321,12 +344,19 @@ export default function MenuPage() {
           </div>
           <h3 className="text-lg font-semibold text-foreground mb-1">Belum Ada Profil Toko</h3>
           <p className="text-sm text-muted-foreground max-w-sm">
-            Buat profil toko terlebih dahulu di halaman <a href="/dashboard/profile" className="text-primary hover:underline font-medium">Profil Toko</a> sebelum menambahkan menu.
+            Buat profil toko terlebih dahulu di halaman <a href="/dashboard/profile" className="text-primary font-medium">Profil Toko</a> sebelum menambahkan menu.
           </p>
         </div>
       </div>
     );
   }
+
+  const filteredMenus = menus.filter((m) => {
+    const matchesSearch = m.nama.toLowerCase().includes(menuSearchQuery.toLowerCase());
+    const normalizedCategory = activeMenuCategory === 'Non Kopi' ? 'non-kopi' : activeMenuCategory.toLowerCase();
+    const matchesCategory = activeMenuCategory === 'Semua' || m.category === normalizedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -338,7 +368,7 @@ export default function MenuPage() {
         </div>
         <button
           onClick={openAddModal}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-xl hover:bg-brown-800 transition-all duration-200 shadow-md shadow-brown-900/10 active:scale-[0.98]"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-xl shadow-md shadow-brown-900/10"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" />
@@ -346,6 +376,35 @@ export default function MenuPage() {
           </svg>
           Tambah Menu
         </button>
+      </div>
+
+      {/* Search & Categories */}
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-card p-4 rounded-2xl border border-border/60">
+        <div className="relative flex-grow w-full md:max-w-md">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+          <input
+            type="text"
+            placeholder="Cari nama menu..."
+            value={menuSearchQuery}
+            onChange={(e) => setMenuSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-input rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-ring text-sm text-foreground"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {['Semua', 'Kopi', 'Non Kopi', 'Makanan'].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveMenuCategory(cat)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${activeMenuCategory === cat
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-primary border border-input'
+                }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Alert */}
@@ -388,7 +447,7 @@ export default function MenuPage() {
           </p>
           <button
             onClick={openAddModal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-xl hover:bg-brown-800 transition-all duration-200"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-sm rounded-xl"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="5" x2="12" y2="19" />
@@ -399,7 +458,7 @@ export default function MenuPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {menus.map((menu) => (
+          {filteredMenus.map((menu) => (
             <MenuCard
               key={menu.id}
               menu={menu}
@@ -434,7 +493,7 @@ export default function MenuPage() {
                   onChange={(e) => setNama(e.target.value)}
                   required
                   placeholder="Contoh: Espresso, Cappuccino"
-                  className="w-full px-4 py-3 bg-brown-50 border border-input rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 bg-brown-50 border border-input rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
               </div>
 
@@ -448,7 +507,7 @@ export default function MenuPage() {
                   required
                   min="0"
                   placeholder="15000"
-                  className="w-full px-4 py-3 bg-brown-50 border border-input rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 bg-brown-50 border border-input rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
               </div>
 
@@ -460,8 +519,36 @@ export default function MenuPage() {
                   onChange={(e) => setDeskripsi(e.target.value)}
                   rows={3}
                   placeholder="Deskripsi singkat menu..."
-                  className="w-full px-4 py-3 bg-brown-50 border border-input rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200 resize-none"
+                  className="w-full px-4 py-3 bg-brown-100 border border-input rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="menu-category" className="block text-sm font-medium text-foreground">Kategori</label>
+                  <select
+                    id="menu-category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-4 py-3 bg-brown-100 border border-input rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  >
+                    <option value="kopi">Kopi</option>
+                    <option value="non-kopi">Non Kopi</option>
+                    <option value="makanan">Makanan</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2 flex flex-col justify-end pb-1">
+                  <label className="flex items-center gap-3 cursor-pointer p-3 bg-brown-50 border border-input rounded-xl">
+                    <input
+                      type="checkbox"
+                      checked={isFavorite}
+                      onChange={(e) => setIsFavorite(e.target.checked)}
+                      className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium text-foreground">Favorit</span>
+                  </label>
+                </div>
               </div>
 
               {/* Foto Upload (only for new menu) */}
@@ -483,7 +570,7 @@ export default function MenuPage() {
                 <button
                   type="button"
                   onClick={() => menuFileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-brown-50 border border-dashed border-brown-300 text-sm text-muted-foreground rounded-xl hover:bg-brown-100 hover:border-brown-400 transition-all duration-200"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-brown-50 border border-dashed border-brown-300 text-sm text-muted-foreground rounded-xl"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -506,7 +593,7 @@ export default function MenuPage() {
                         <button
                           type="button"
                           onClick={() => setSelectedFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
                         >
                           ×
                         </button>
@@ -522,14 +609,14 @@ export default function MenuPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-3 bg-secondary text-secondary-foreground font-medium rounded-xl hover:bg-brown-200 transition-all duration-200"
+                  className="flex-1 px-4 py-3 bg-secondary text-secondary-foreground font-medium rounded-xl"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-brown-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? 'Menyimpan...' : editingMenu ? 'Simpan Perubahan' : 'Tambah Menu'}
                 </button>
@@ -562,7 +649,7 @@ export default function MenuPage() {
                 type="button"
                 onClick={() => fotoInputRef.current?.click()}
                 disabled={isUploadingFoto}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground font-medium text-sm rounded-xl hover:bg-brown-200 transition-all duration-200 disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground font-medium text-sm rounded-xl disabled:opacity-50"
               >
                 {isUploadingFoto ? (
                   <>
@@ -593,7 +680,7 @@ export default function MenuPage() {
                     <img src={foto.url} alt="" className="w-full aspect-square object-cover" />
                     <button
                       onClick={() => handleDeleteFoto(foto.id)}
-                      className="absolute top-1.5 right-1.5 w-7 h-7 bg-red-500/90 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+                      className="absolute top-1.5 right-1.5 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center"
                       title="Hapus foto"
                     >
                       <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -612,7 +699,7 @@ export default function MenuPage() {
               <button
                 type="button"
                 onClick={() => setShowFotoModal(false)}
-                className="w-full px-4 py-2.5 bg-secondary text-secondary-foreground font-medium rounded-xl hover:bg-brown-200 transition-all duration-200"
+                className="w-full px-4 py-2.5 bg-secondary text-secondary-foreground font-medium rounded-xl"
               >
                 Tutup
               </button>
@@ -639,14 +726,14 @@ export default function MenuPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="flex-1 px-4 py-2.5 bg-secondary text-secondary-foreground font-medium rounded-xl hover:bg-brown-200 transition-all duration-200"
+                className="flex-1 px-4 py-2.5 bg-secondary text-secondary-foreground font-medium rounded-xl"
               >
                 Batal
               </button>
               <button
                 onClick={handleDeleteMenu}
                 disabled={isDeleting}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition-all duration-200"
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white font-semibold rounded-xl disabled:opacity-50"
               >
                 {isDeleting ? 'Menghapus...' : 'Hapus'}
               </button>

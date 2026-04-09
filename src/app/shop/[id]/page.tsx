@@ -81,7 +81,7 @@ function Lightbox({ items, startIndex, onClose }: { items: { foto: FotoItem; tit
           <img src={items[current].foto.url} alt={items[current].title} className="w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl" />
           
           {/* Controls */}
-          <button onClick={onClose} className="absolute top-4 right-4 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-lg border border-white/20">
+          <button onClick={onClose} className="absolute top-4 right-4 w-12 h-12 bg-white/10 text-white rounded-full flex items-center justify-center backdrop-blur-md shadow-lg border border-white/20">
             <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
 
@@ -89,13 +89,13 @@ function Lightbox({ items, startIndex, onClose }: { items: { foto: FotoItem; tit
             <>
               <button
                 onClick={() => setCurrent((c) => (c - 1 + items.length) % items.length)}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-lg border border-white/20"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 text-white rounded-full flex items-center justify-center backdrop-blur-md shadow-lg border border-white/20"
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
               </button>
               <button
                 onClick={() => setCurrent((c) => (c + 1) % items.length)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-lg border border-white/20"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 text-white rounded-full flex items-center justify-center backdrop-blur-md shadow-lg border border-white/20"
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
               </button>
@@ -369,7 +369,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
           </svg>
         </div>
         <h2 className="text-xl font-bold text-foreground">{error || 'Toko tidak ditemukan'}</h2>
-        <Link href="/" className="text-primary font-medium hover:underline">← Kembali ke Beranda</Link>
+        <Link href="/" className="text-primary font-medium">← Kembali ke Beranda</Link>
       </div>
     );
   }
@@ -396,13 +396,13 @@ export default function ShopDetailPage({ params }: { params: any }) {
     <div className="min-h-screen bg-background">
       <nav className="fixed top-0 w-full z-50 bg-white border-b border-primary/5 shadow-sm">
         <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="bg-primary p-2 rounded-lg text-white shadow-md group-hover:scale-105 transition-transform">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="bg-primary p-2 rounded-lg text-white shadow-md">
               <svg fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path><line x1="6" x2="6" y1="2" y2="4"></line><line x1="10" x2="10" y1="2" y2="4"></line><line x1="14" x2="14" y1="2" y2="4"></line></svg>
             </div>
             <span className="text-xl font-bold tracking-tighter text-primary">CariKopi</span>
           </Link>
-          <Link href="/" className="text-sm font-semibold text-primary hover:opacity-80 transition-opacity">
+          <Link href="/" className="text-sm font-semibold text-primary">
             ← Kembali
           </Link>
         </div>
@@ -441,7 +441,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
                 const menuSection = document.getElementById('menu-section');
                 menuSection?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="px-8 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-opacity-90 transition-all transform hover:scale-105 shadow-xl"
+              className="px-8 py-3.5 bg-primary text-white font-bold rounded-xl shadow-xl"
             >
               Order Online
             </button>
@@ -485,7 +485,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
                   href={`https://www.google.com/maps?q=${shop.latitude},${shop.longitude}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-primary font-bold hover:underline"
+                  className="inline-flex items-center gap-2 text-primary font-bold"
                 >
                   Lihat di Google Maps
                   <svg fill="none" height="16" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
@@ -494,12 +494,12 @@ export default function ShopDetailPage({ params }: { params: any }) {
               
               <div className="flex items-center gap-4">
                 {shop.whatsapp && (
-                  <a href={shop.whatsapp} target="_blank" rel="noopener noreferrer" className="text-on-surface-variant hover:text-primary transition-colors">
+                  <a href={shop.whatsapp} target="_blank" rel="noopener noreferrer" className="text-on-surface-variant">
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
                   </a>
                 )}
                 {shop.instagram && (
-                  <a href={shop.instagram} target="_blank" rel="noopener noreferrer" className="text-on-surface-variant hover:text-primary transition-colors">
+                  <a href={shop.instagram} target="_blank" rel="noopener noreferrer" className="text-on-surface-variant">
                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
                   </a>
                 )}
@@ -513,7 +513,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
         <div className="flex border-b border-primary/5 gap-12">
           <button
             onClick={() => setActiveTab('menu')}
-            className={`pb-4 text-lg font-bold transition-all relative ${activeTab === 'menu' ? 'text-primary' : 'text-on-surface-variant hover:text-primary'
+            className={`pb-4 text-lg font-bold relative ${activeTab === 'menu' ? 'text-primary' : 'text-on-surface-variant'
               }`}
           >
             Pilihan Menu
@@ -523,7 +523,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
           </button>
           <button
             onClick={() => setActiveTab('gallery')}
-            className={`pb-4 text-lg font-bold transition-all relative ${activeTab === 'gallery' ? 'text-primary' : 'text-on-surface-variant hover:text-primary'
+            className={`pb-4 text-lg font-bold relative ${activeTab === 'gallery' ? 'text-primary' : 'text-on-surface-variant'
               }`}
           >
             Galeri Foto
@@ -555,9 +555,9 @@ export default function ShopDetailPage({ params }: { params: any }) {
                   <button
                     key={cat}
                     onClick={() => setActiveMenuCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${activeMenuCategory === cat
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${activeMenuCategory === cat
                         ? 'bg-primary text-white'
-                        : 'bg-white text-primary border border-primary/10 hover:bg-primary/5'
+                        : 'bg-white text-primary border border-primary/10'
                       }`}
                   >
                     {cat}
@@ -575,7 +575,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
                 {filteredMenus.map((menu) => {
                   const thumb = menu.foto?.[0];
                   return (
-                    <div key={menu.id} className="bg-white p-3 md:p-4 rounded-2xl border border-primary/5 shadow-sm hover:shadow-xl transition-all group flex flex-col h-full">
+                    <div key={menu.id} className="bg-white p-3 md:p-4 rounded-2xl border border-primary/5 shadow-sm flex flex-col h-full">
                       <div
                         className={`relative h-28 md:h-56 rounded-xl overflow-hidden mb-3 md:mb-4 flex-shrink-0 ${thumb ? 'cursor-pointer' : ''}`}
                         onClick={() => {
@@ -586,7 +586,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
                         }}
                       >
                         {thumb ? (
-                          <img src={thumb.url} alt={menu.nama} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <img src={thumb.url} alt={menu.nama} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-surface-container-low">
                             <svg className="w-12 h-12 text-primary/10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -599,12 +599,12 @@ export default function ShopDetailPage({ params }: { params: any }) {
                         </div>
                       </div>
                       <div className="flex flex-col md:flex-row justify-between items-start mb-2 px-1 gap-1">
-                        <h3 className="text-sm md:text-lg font-bold group-hover:text-primary transition-colors line-clamp-2 md:line-clamp-1 h-10 md:h-auto">{menu.nama}</h3>
+                        <h3 className="text-sm md:text-lg font-bold line-clamp-2 md:line-clamp-1 h-10 md:h-auto">{menu.nama}</h3>
                         <span className="text-sm md:text-base font-bold text-primary shrink-0">{formatRupiah(menu.harga)}</span>
                       </div>
                       <button
                         onClick={() => addToCart(menu)}
-                        className="w-full py-2.5 md:py-3.5 bg-primary/10 text-primary font-bold rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm active:scale-[0.98] mt-auto flex items-center justify-center gap-1.5 text-xs md:text-base"
+                        className="w-full py-2.5 md:py-3.5 bg-primary/10 text-primary font-bold rounded-xl shadow-sm mt-auto flex items-center justify-center gap-1.5 text-xs md:text-base"
                       >
                         <span className="md:hidden flex items-center gap-1">
                           <span className="text-lg">+</span>
@@ -635,7 +635,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
                 <img
                   src={item.foto.url}
                   alt={item.nama}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  className="w-full h-full object-cover"
                 />
               </div>
             ))}
@@ -649,7 +649,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
           {totalItems > 0 && (
             <button
               onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3.5 bg-primary text-white rounded-full font-bold shadow-2xl hover:scale-105 transition-all"
+              className="flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3.5 bg-primary text-white rounded-full font-bold shadow-2xl"
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
@@ -665,7 +665,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
           {pastOrders && pastOrders.length > 0 && (
             <button
               onClick={() => setIsOrdersOpen(true)}
-              className="flex items-center gap-2 px-4 md:px-6 py-3.5 bg-yellow-600 text-white rounded-full font-bold shadow-2xl hover:scale-105 transition-all text-sm md:text-base"
+              className="flex items-center gap-2 px-4 md:px-6 py-3.5 bg-yellow-600 text-white rounded-full font-bold shadow-2xl text-sm md:text-base"
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
@@ -683,7 +683,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
           <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-primary/5">
             <div className="p-6 border-b border-primary/5 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-primary">Pesanan Anda</h2>
-              <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-surface-container-low rounded-full transition-colors text-primary">
+              <button onClick={() => setIsCartOpen(false)} className="p-2 rounded-full text-primary">
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
             </div>
@@ -695,7 +695,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
                     <svg className="w-10 h-10 text-primary/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
                   </div>
                   <p className="text-on-surface-variant font-medium">Keranjang masih kosong</p>
-                  <button onClick={() => setIsCartOpen(false)} className="mt-4 text-primary font-bold hover:underline">Mulai Belanja</button>
+                  <button onClick={() => setIsCartOpen(false)} className="mt-4 text-primary font-bold">Mulai Belanja</button>
                 </div>
               ) : (
                 <>
@@ -716,7 +716,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
                         <div className="flex-1">
                           <div className="flex justify-between items-start mb-1">
                             <h4 className="font-bold text-primary line-clamp-1">{item.menu.nama}</h4>
-                            <button onClick={() => removeFromCart(item.menu.id)} className="text-on-surface-variant hover:text-red-500 transition-colors">
+                            <button onClick={() => removeFromCart(item.menu.id)} className="text-on-surface-variant">
                               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                             </button>
                           </div>
@@ -779,7 +779,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
               <button
                 disabled={isSubmitting || cart.length === 0}
                 onClick={submitOrder}
-                className="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-opacity-90 transition-all shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white animate-spin rounded-full" />
@@ -799,7 +799,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
           <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-primary/5">
             <div className="p-6 border-b border-primary/5 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-primary">Riwayat Pesanan</h2>
-              <button onClick={() => setIsOrdersOpen(false)} className="p-2 hover:bg-surface-container-low rounded-full transition-colors text-primary">
+              <button onClick={() => setIsOrdersOpen(false)} className="p-2 rounded-full text-primary">
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
             </div>
@@ -881,9 +881,9 @@ export default function ShopDetailPage({ params }: { params: any }) {
             <div className="space-y-6">
               <h4 className="text-lg font-bold">Layanan Kami</h4>
               <ul className="space-y-4 text-white/70 text-sm">
-                <li><Link href="/" className="hover:text-white transition-colors">Cari Kedai Terdekat</Link></li>
-                <li><button onClick={() => setIsCartOpen(true)} className="hover:text-white transition-colors">Pesan Online</button></li>
-                <li><Link href="#" className="hover:text-white transition-colors">Daftarkan Toko</Link></li>
+                <li><Link href="/" className="">Cari Kedai Terdekat</Link></li>
+                <li><button onClick={() => setIsCartOpen(true)} className="">Pesan Online</button></li>
+                <li><Link href="#" className="">Daftarkan Toko</Link></li>
               </ul>
             </div>
 

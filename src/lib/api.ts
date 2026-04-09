@@ -201,12 +201,16 @@ export interface MenuItem {
   harga: number;
   deskripsi: string;
   foto: MenuFoto[];
+  category?: string;
+  isFavorite?: boolean;
 }
 
 export interface MenuSubmitRequest {
   nama: string;
   harga: number;
   deskripsi: string;
+  category: string;
+  isFavorite: boolean;
 }
 
 export const menuApi = {
@@ -225,6 +229,8 @@ export const menuApi = {
     formData.append('nama', body.nama);
     formData.append('harga', body.harga.toString());
     formData.append('deskripsi', body.deskripsi);
+    formData.append('category', body.category);
+    formData.append('isFavorite', body.isFavorite.toString());
     if (fotos) {
       fotos.forEach((f) => formData.append('foto', f));
     }
@@ -250,6 +256,8 @@ export const menuApi = {
     formData.append('nama', body.nama);
     formData.append('harga', body.harga.toString());
     formData.append('deskripsi', body.deskripsi);
+    formData.append('category', body.category);
+    formData.append('isFavorite', body.isFavorite.toString());
     if (fotos) {
       fotos.forEach((f) => formData.append('foto', f));
     }

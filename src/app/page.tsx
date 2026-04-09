@@ -157,7 +157,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-on-surface font-['Plus_Jakarta_Sans']">
 
       {/* ── TopNavBar ── */}
-      <nav className="fixed top-0 w-full z-50 bg-white border-b border-primary/5 shadow-sm transition-colors duration-300 h-16 flex items-center">
+      <nav className="fixed top-0 w-full z-50 bg-white border-b border-primary/5 shadow-sm h-16 flex items-center">
         <div className="flex justify-between items-center w-full px-6 md:px-12 max-w-7xl mx-auto">
           <Link href="/" className="text-2xl font-bold text-primary tracking-tighter">
             CariKopi
@@ -167,7 +167,7 @@ export default function LandingPage() {
           </div>
           <button 
             onClick={handleFindNearby}
-            className="hidden md:block bg-primary text-primary-foreground px-6 py-2.5 rounded-full font-semibold text-sm premium-gradient active:scale-95 transition-transform"
+            className="hidden md:block bg-primary text-primary-foreground px-6 py-2.5 rounded-full font-semibold text-sm premium-gradient"
           >
             Find Nearby
           </button>
@@ -203,7 +203,7 @@ export default function LandingPage() {
                 </div>
                 <button 
                   onClick={handleFindNearby}
-                  className="w-full h-14 bg-white text-primary rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
+                  className="w-full h-14 bg-white text-primary rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg"
                 >
                   <span className="material-symbols-outlined">near_me</span>
                   Cari Sekitarku
@@ -230,13 +230,13 @@ export default function LandingPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-                    className="w-full pl-12 pr-4 py-5 rounded-xl bg-white border-2 border-primary/5 focus:ring-1 focus:ring-primary/20 text-on-surface placeholder:text-on-surface-variant/50 shadow-sm transition-all"
+                  className="w-full pl-12 pr-4 py-5 rounded-xl bg-white border-2 border-primary/5 focus:ring-1 focus:ring-primary/20 text-on-surface placeholder:text-on-surface-variant/50 shadow-sm"
                     placeholder="Cari berdasarkan nama coffee shop" 
                   />
                 </div>
                 <button 
                   onClick={handleFindNearby}
-                  className="flex items-center justify-center gap-2 px-8 py-5 bg-white text-primary border-2 border-primary/5 rounded-xl font-bold transition-all hover:brightness-95 active:scale-95 shadow-sm"
+                  className="flex items-center justify-center gap-2 px-8 py-5 bg-white text-primary border-2 border-primary/5 rounded-xl font-bold shadow-sm"
                 >
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: '"FILL" 1' }}>near_me</span>
                   Cari Sekitarku
@@ -292,8 +292,8 @@ export default function LandingPage() {
                   ))}
                 </select>
               </div>
-              <button className="text-primary font-bold flex items-center gap-2 group transition-colors text-sm">
-                See All<span className="material-symbols-outlined transition-transform group-hover:translate-x-1 text-base">arrow_forward</span>
+              <button className="text-primary font-bold flex items-center gap-2 text-sm">
+                See All<span className="material-symbols-outlined text-base">arrow_forward</span>
               </button>
             </div>
           </div>
@@ -310,11 +310,11 @@ export default function LandingPage() {
                   <Link 
                     key={shop.id}
                     href={`/shop/${shop.id}`}
-                    className={`flex flex-col gap-4 md:gap-6 group ${idx % 2 === 1 && !isLoadingNearby ? 'lg:mt-12' : ''}`}
+                    className={`flex flex-col gap-4 md:gap-6 ${idx % 2 === 1 && !isLoadingNearby ? 'lg:mt-12' : ''}`}
                   >
-                    <div className="relative rounded-2xl overflow-hidden aspect-[4/5] md:aspect-[4/5] bg-surface-container shadow-sm group-hover:shadow-md transition-shadow">
+                    <div className="relative rounded-2xl overflow-hidden aspect-[4/5] md:aspect-[4/5] bg-surface-container shadow-sm">
                       {shop.fotoProfil ? (
-                        <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src={shop.fotoProfil.url} alt={shop.nama_toko} />
+                        <img className="w-full h-full object-cover" src={shop.fotoProfil.url} alt={shop.nama_toko} />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-4xl md:text-6xl opacity-20">☕</div>
                       )}
@@ -323,7 +323,7 @@ export default function LandingPage() {
                     
                     <div className="flex flex-col gap-1 md:gap-2">
                       <div className="flex justify-between items-start">
-                        <h3 className="text-base md:text-2xl font-bold text-primary group-hover:underline underline-offset-4 decoration-2 decoration-primary/30 leading-tight">{shop.nama_toko}</h3>
+                        <h3 className="text-base md:text-2xl font-bold text-primary underline-offset-4 decoration-2 decoration-primary/30 leading-tight">{shop.nama_toko}</h3>
                       </div>
                       
                       {shop.tags && (
@@ -361,8 +361,8 @@ export default function LandingPage() {
                 { value: 50, suffix: '+', label: 'Kota' },
                 { value: 1000, suffix: '+', label: 'Pengguna' },
               ].map((stat, i) => (
-                <div key={i} className="text-center group">
-                  <div className="text-3xl md:text-4xl font-extrabold text-primary mb-1 group-hover:scale-110 transition-transform">
+                <div key={i} className="text-center">
+                  <div className="text-3xl md:text-4xl font-extrabold text-primary mb-1">
                     <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                   </div>
                   <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60">{stat.label}</p>
@@ -386,8 +386,8 @@ export default function LandingPage() {
                 { icon: 'psychology', title: 'Pilih Vibe', desc: 'Filter berdasarkan pencahayaan, kecepatan Wi-Fi, jenis tempat duduk, atau asal kopi.', color: 'bg-secondary-container text-on-secondary-container' },
                 { icon: 'coffee', title: 'Nikmati Seduhan', desc: 'Kunjungi tempat pilihanmu dan nikmati kopi buatan barista yang sempurna.', color: 'bg-secondary-container text-on-secondary-container' },
               ].map((step, i) => (
-                <div key={i} className="flex flex-row md:flex-col items-center md:text-center group gap-6 md:gap-0">
-                  <div className={`w-14 h-14 md:w-20 md:h-20 shrink-0 rounded-2xl md:rounded-full ${step.color} flex items-center justify-center mb-0 md:mb-8 ambient-shadow group-hover:scale-110 transition-transform`}>
+                <div key={i} className="flex flex-row md:flex-col items-center md:text-center gap-6 md:gap-0">
+                  <div className={`w-14 h-14 md:w-20 md:h-20 shrink-0 rounded-2xl md:rounded-full ${step.color} flex items-center justify-center mb-0 md:mb-8 ambient-shadow`}>
                     <span className="material-symbols-outlined text-2xl md:text-4xl">{step.icon}</span>
                   </div>
                   <div className="flex flex-col">
@@ -410,10 +410,10 @@ export default function LandingPage() {
                 Daftarkan toko Anda dan jangkau komunitas pecinta kopi terbesar. Kelola menu, terima pesanan, dan bangun brand Anda bersama kami.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/register" className="w-full sm:w-auto px-10 py-5 bg-white text-primary rounded-xl font-bold text-lg hover:bg-secondary-container transition-colors shadow-lg">
+                <Link href="/register" className="w-full sm:w-auto px-10 py-5 bg-white text-primary rounded-xl font-bold text-lg shadow-lg">
                   Daftar Sekarang
                 </Link>
-                <Link href="/login" className="text-white/70 hover:text-white font-medium transition-colors underline underline-offset-8">
+                <Link href="/login" className="text-white/70 font-medium underline underline-offset-8">
                   Sudah punya akun? Masuk
                 </Link>
               </div>
@@ -432,9 +432,9 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
-            <Link href="#" className="text-on-surface-variant/70 hover:text-primary underline decoration-primary/30 decoration-2 underline-offset-8 text-sm font-medium transition-all">Privacy Policy</Link>
-            <Link href="#" className="text-on-surface-variant/70 hover:text-primary underline decoration-primary/30 decoration-2 underline-offset-8 text-sm font-medium transition-all">Terms of Service</Link>
-            <Link href="#" className="text-on-surface-variant/70 hover:text-primary underline decoration-primary/30 decoration-2 underline-offset-8 text-sm font-medium transition-all">Contact</Link>
+            <Link href="#" className="text-on-surface-variant/70 underline decoration-primary/30 decoration-2 underline-offset-8 text-sm font-medium">Privacy Policy</Link>
+            <Link href="#" className="text-on-surface-variant/70 underline decoration-primary/30 decoration-2 underline-offset-8 text-sm font-medium">Terms of Service</Link>
+            <Link href="#" className="text-on-surface-variant/70 underline decoration-primary/30 decoration-2 underline-offset-8 text-sm font-medium">Contact</Link>
           </div>
         </div>
       </footer>
