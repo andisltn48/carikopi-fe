@@ -71,38 +71,44 @@ function formatRupiah(value: number): string {
 
 // ── Photo Lightbox ──
 
-function Lightbox({ fotos, startIndex, onClose }: { fotos: FotoItem[]; startIndex: number; onClose: () => void }) {
+function Lightbox({ items, startIndex, onClose }: { items: { foto: FotoItem; title: string }[]; startIndex: number; onClose: () => void }) {
   const [current, setCurrent] = useState(startIndex);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative max-w-4xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
-        <img src={fotos[current].url} alt="" className="w-full max-h-[80vh] object-contain rounded-2xl" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="relative max-w-5xl w-full flex flex-col items-center gap-4" onClick={(e) => e.stopPropagation()}>
+        <div className="relative w-full">
+          <img src={items[current].foto.url} alt={items[current].title} className="w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl" />
+          
+          {/* Controls */}
+          <button onClick={onClose} className="absolute top-4 right-4 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-lg border border-white/20">
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
 
-        {/* Controls */}
-        <button onClick={onClose} className="absolute top-3 right-3 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70">
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-        </button>
+          {items.length > 1 && (
+            <>
+              <button
+                onClick={() => setCurrent((c) => (c - 1 + items.length) % items.length)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-lg border border-white/20"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
+              </button>
+              <button
+                onClick={() => setCurrent((c) => (c + 1) % items.length)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-lg border border-white/20"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+              </button>
+            </>
+          )}
+        </div>
 
-        {fotos.length > 1 && (
-          <>
-            <button
-              onClick={() => setCurrent((c) => (c - 1 + fotos.length) % fotos.length)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
-            </button>
-            <button
-              onClick={() => setCurrent((c) => (c + 1) % fotos.length)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
-            </button>
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full">
-              {current + 1} / {fotos.length}
-            </div>
-          </>
-        )}
+        <div className="text-center space-y-2">
+          <h3 className="text-xl md:text-2xl font-bold text-white tracking-tight">{items[current].title}</h3>
+          <div className="inline-block bg-white/10 backdrop-blur-md text-white/80 text-xs px-4 py-1.5 rounded-full border border-white/10">
+            {current + 1} / {items.length}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -124,7 +130,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
   const [hasMounted, setHasMounted] = useState(false);
 
   // Lightbox
-  const [lightboxFotos, setLightboxFotos] = useState<FotoItem[] | null>(null);
+  const [lightboxItems, setLightboxItems] = useState<{ foto: FotoItem; title: string }[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Cart & Order
@@ -573,7 +579,10 @@ export default function ShopDetailPage({ params }: { params: any }) {
                       <div
                         className={`relative h-28 md:h-56 rounded-xl overflow-hidden mb-3 md:mb-4 flex-shrink-0 ${thumb ? 'cursor-pointer' : ''}`}
                         onClick={() => {
-                          if (menu.foto?.length > 0) openLightbox(menu.foto, 0);
+                          if (menu.foto?.length > 0) {
+                            setLightboxItems(menu.foto.map(f => ({ foto: f, title: menu.nama })));
+                            setLightboxIndex(0);
+                          }
                         }}
                       >
                         {thumb ? (
@@ -617,7 +626,10 @@ export default function ShopDetailPage({ params }: { params: any }) {
             {galleries.map((item, index) => (
               <div
                 key={item.id}
-                onClick={() => openLightbox(galleries.map(g => g.foto), index)}
+                onClick={() => {
+                  setLightboxItems(galleries.map(g => ({ foto: g.foto, title: g.nama })));
+                  setLightboxIndex(index);
+                }}
                 className="aspect-square bg-brown-100 rounded-2xl overflow-hidden border border-border/60 cursor-pointer group"
               >
                 <img
@@ -846,8 +858,8 @@ export default function ShopDetailPage({ params }: { params: any }) {
       )}
 
       {/* Lightbox */}
-      {lightboxFotos && (
-        <Lightbox fotos={lightboxFotos} startIndex={lightboxIndex} onClose={() => setLightboxFotos(null)} />
+      {lightboxItems && (
+        <Lightbox items={lightboxItems} startIndex={lightboxIndex} onClose={() => setLightboxItems(null)} />
       )}
 
       {/* Footer */}
