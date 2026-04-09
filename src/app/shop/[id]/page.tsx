@@ -35,7 +35,8 @@ interface MenuItemPublic {
   harga: number;
   deskripsi: string;
   foto: FotoItem[];
-  category?: string; // Optional category field
+  category: string;
+  isFavorite: boolean;
 }
 
 interface CartItem {
@@ -376,19 +377,10 @@ export default function ShopDetailPage({ params }: { params: any }) {
 
   const tags = shop.tags ? shop.tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
 
-  const getCategory = (menu: MenuItemPublic) => {
-    if (menu.category) return menu.category;
-    const name = menu.nama.toLowerCase();
-    if (name.includes('kopi') || name.includes('espresso') || name.includes('latte') || name.includes('cappuccino') || name.includes('americano') || name.includes('brew')) return 'Kopi';
-    if (name.includes('teh') || name.includes('tea') || name.includes('juice') || name.includes('jus') || name.includes('milk') || name.includes('susu') || name.includes('chocolate') || name.includes('cokelat')) return 'Non Kopi';
-    if (name.includes('nasi') || name.includes('mie') || name.includes('roti') || name.includes('snack') || name.includes('food') || name.includes('makan') || name.includes('cake') || name.includes('pastry')) return 'Makanan';
-    return 'Lainnya';
-  };
-
   const filteredMenus = menus.filter((menu) => {
     const matchesSearch = menu.nama.toLowerCase().includes(menuSearchQuery.toLowerCase());
-    const itemCategory = getCategory(menu);
-    const matchesCategory = activeMenuCategory === 'Semua' || itemCategory === activeMenuCategory;
+    const normalizedCategory = activeMenuCategory === 'Non Kopi' ? 'non-kopi' : activeMenuCategory.toLowerCase();
+    const matchesCategory = activeMenuCategory === 'Semua' || menu.category === normalizedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -594,8 +586,14 @@ export default function ShopDetailPage({ params }: { params: any }) {
                             </svg>
                           </div>
                         )}
+                        {menu.isFavorite && (
+                          <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                            <span className="hidden sm:inline">FAVORITE</span>
+                          </div>
+                        )}
                         <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold text-primary shadow-sm tracking-wider uppercase">
-                          Choice
+                          {menu.category}
                         </div>
                       </div>
                       <div className="flex flex-col md:flex-row justify-between items-start mb-2 px-1 gap-1">
