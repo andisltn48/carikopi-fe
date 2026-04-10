@@ -475,6 +475,17 @@ export const orderApi = {
       headers: createAuthHeaders(token),
     });
   },
+
+  createOrder: (token: string, payload: Record<string, unknown>) => {
+    return request<Order>('/api/orders/create', {
+      method: 'POST',
+      headers: {
+        ...createAuthHeaders(token),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  },
 };
 
 export { request, API_BASE_URL };

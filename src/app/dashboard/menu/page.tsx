@@ -5,9 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 import {
   coffeeshopApi,
   menuApi,
+  orderApi,
   type MenuItem,
   type MenuSubmitRequest,
   type MenuFoto,
+  type Order,
 } from '@/lib/api';
 
 // ── Helpers ──
@@ -23,11 +25,13 @@ function MenuCard({
   onEdit,
   onFoto,
   onDelete,
+  onAddToCart,
 }: {
   menu: MenuItem;
   onEdit: () => void;
   onFoto: () => void;
   onDelete: () => void;
+  onAddToCart: () => void;
 }) {
   const thumb = menu.foto?.[0];
 
@@ -108,6 +112,16 @@ function MenuCard({
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
           </button>
+          <button
+            onClick={onAddToCart}
+            title="Tambah ke Pesanan"
+            className="p-2 text-green-700 bg-green-50 rounded-xl"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -149,6 +163,18 @@ export default function MenuPage() {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // ── Cart & Order (POS) ──
+  interface CartItem { menu: MenuItem; quantity: number; notes: string; }
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [customerForm, setCustomerForm] = useState({ name: '', phone: '' });
+  const [orderType, setOrderType] = useState<'dinein' | 'takeaway'>('dinein');
+  const [orderStatus, setOrderStatus] = useState('PENDING');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState('');
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
   // ── Load Shop & Menus ──
 
@@ -315,6 +341,81 @@ export default function MenuPage() {
     }
   };
 
+  // ── Cart & Order Logic ──
+
+  const totalCartItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const totalCartPrice = cart.reduce((acc, item) => acc + (item.quantity * item.menu.harga), 0);
+
+  const addToCart = (menu: MenuItem) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.menu.id === menu.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.menu.id === menu.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prev, { menu, quantity: 1, notes: '' }];
+    });
+  };
+
+  const updateCartItem = (menuId: string, updates: Partial<CartItem>) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.menu.id === menuId ? { ...item, ...updates } : item
+      )
+    );
+  };
+
+  const removeFromCart = (menuId: string) => {
+    setCart((prev) => prev.filter((item) => item.menu.id !== menuId));
+  };
+
+  const submitOrder = async () => {
+    if (!customerForm.name || !customerForm.phone) {
+      alert('Nama dan Nomor HP wajib diisi!');
+      return;
+    }
+    if (cart.length === 0 || !shopId) return;
+
+    setIsSubmittingOrder(true);
+    const session = 'admin-' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+    const payload = {
+      name: customerForm.name,
+      phone: customerForm.phone,
+      total_price: totalCartPrice,
+      shop_id: shopId,
+      unique_session: session,
+      order_type: orderType,
+      status: orderStatus,
+      payment_method: paymentMethod,
+      order_menus: cart.map((item) => ({
+        menu_id: item.menu.id,
+        quantity: item.quantity,
+        total_price: item.quantity * item.menu.harga,
+        notes: item.notes
+      }))
+    };
+
+    try {
+      const result = await orderApi.createOrder(token!, payload);
+      if (result.success && result.data) {
+        setLastOrder(result.data);
+        setCart([]);
+        setIsCartOpen(false);
+        setCustomerForm({ name: '', phone: '' });
+        setOrderType('dinein');
+        setOrderStatus('PENDING');
+        setPaymentMethod('cash');
+      } else {
+        alert('Gagal membuat pesanan: ' + (result.message || 'Error tidak diketahui'));
+      }
+    } catch {
+      alert('Terjadi kesalahan jaringan saat membuat pesanan.');
+    }
+    setIsSubmittingOrder(false);
+  };
+
   // ── Loading ──
 
   if (isLoading) {
@@ -408,13 +509,13 @@ export default function MenuPage() {
       </div>
 
       {/* Alert */}
-      {success && (
+      {(success || orderSuccess) && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm flex items-start gap-2" role="status">
           <svg className="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
             <polyline points="22 4 12 14.01 9 11.01" />
           </svg>
-          <span>{success}</span>
+          <span>{success || orderSuccess}</span>
         </div>
       )}
 
@@ -465,6 +566,7 @@ export default function MenuPage() {
               onEdit={() => openEditModal(menu)}
               onFoto={() => openFotoModal(menu)}
               onDelete={() => setDeleteTarget(menu)}
+              onAddToCart={() => addToCart(menu)}
             />
           ))}
         </div>
@@ -736,6 +838,284 @@ export default function MenuPage() {
                 className="flex-1 px-4 py-2.5 bg-red-600 text-white font-semibold rounded-xl disabled:opacity-50"
               >
                 {isDeleting ? 'Menghapus...' : 'Hapus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Floating Cart Button ── */}
+      {totalCartItems > 0 && !isCartOpen && (
+        <div className="fixed bottom-6 right-6 z-40">
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="flex items-center gap-2 px-5 py-3.5 bg-primary text-white rounded-full font-bold shadow-2xl shadow-brown-900/30"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+            Buat Pesanan
+            <span className="bg-white text-primary px-2 py-0.5 rounded-full text-xs font-bold">
+              {totalCartItems}
+            </span>
+            <span className="hidden md:inline">- {formatRupiah(totalCartPrice)}</span>
+          </button>
+        </div>
+      )}
+
+      {/* ── Cart / POS Sidebar ── */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-[60] flex justify-end">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsCartOpen(false)} />
+          <div className="relative w-full max-w-md bg-card h-full shadow-2xl flex flex-col border-l border-border/60">
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <h2 className="text-xl font-bold text-foreground">Buat Pesanan</h2>
+              <button onClick={() => setIsCartOpen(false)} className="p-2 rounded-full text-muted-foreground hover:text-foreground">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {cart.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 bg-brown-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-brown-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
+                  </div>
+                  <p className="text-muted-foreground text-sm">Keranjang kosong</p>
+                  <button onClick={() => setIsCartOpen(false)} className="mt-3 text-primary font-semibold text-sm">Pilih Menu</button>
+                </div>
+              ) : (
+                <>
+                  {/* Cart Items */}
+                  <div className="space-y-3">
+                    {cart.map((item) => (
+                      <div key={item.menu.id} className="flex gap-3 p-3 rounded-xl border border-border/60 bg-secondary/20">
+                        <div className="w-14 h-14 rounded-lg overflow-hidden bg-brown-100 shrink-0">
+                          {item.menu.foto?.[0] ? (
+                            <img src={item.menu.foto[0].url} alt={item.menu.nama} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <svg className="w-6 h-6 text-brown-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <path d="M17 8h1a4 4 0 1 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start mb-1">
+                            <h4 className="font-semibold text-foreground text-sm truncate">{item.menu.nama}</h4>
+                            <button onClick={() => removeFromCart(item.menu.id)} className="text-muted-foreground hover:text-red-500 ml-1 shrink-0">
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                          <p className="text-xs text-primary font-semibold mb-2">{formatRupiah(item.menu.harga)}</p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => updateCartItem(item.menu.id, { quantity: Math.max(1, item.quantity - 1) })}
+                              className="w-7 h-7 rounded-lg border border-border flex items-center justify-center bg-card text-foreground font-bold text-xs"
+                            >-</button>
+                            <span className="font-bold text-foreground text-sm w-4 text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateCartItem(item.menu.id, { quantity: item.quantity + 1 })}
+                              className="w-7 h-7 rounded-lg border border-border flex items-center justify-center bg-card text-foreground font-bold text-xs"
+                            >+</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Customer Form */}
+                  <div className="pt-4 border-t border-border space-y-3">
+                    <h3 className="font-semibold text-foreground text-sm">Informasi Pelanggan</h3>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-widest block mb-1.5">Nama</label>
+                      <input
+                        type="text"
+                        value={customerForm.name}
+                        onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })}
+                        className="w-full px-3 py-2.5 bg-background border border-input rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="Nama pelanggan..."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-widest block mb-1.5">No. HP</label>
+                      <input
+                        type="tel"
+                        value={customerForm.phone}
+                        onChange={(e) => setCustomerForm({ ...customerForm, phone: e.target.value })}
+                        className="w-full px-3 py-2.5 bg-background border border-input rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="08xxxxxxxxxx"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-widest block mb-1.5">Tipe Order</label>
+                      <select
+                        value={orderType}
+                        onChange={(e) => setOrderType(e.target.value as 'dinein' | 'takeaway')}
+                        className="w-full px-3 py-2.5 bg-background border border-input rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring appearance-none cursor-pointer"
+                      >
+                        <option value="dinein">Dine-in</option>
+                        <option value="takeaway">Take-away</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-widest block mb-1.5">Status Pesanan</label>
+                      <select
+                        value={orderStatus}
+                        onChange={(e) => setOrderStatus(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-background border border-input rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring appearance-none cursor-pointer"
+                      >
+                        <option value="PENDING">PENDING</option>
+                        <option value="ON PROGRESS">ON PROGRESS</option>
+                        <option value="DONE">DONE</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-widest block mb-1.5">Metode Pembayaran</label>
+                      <select
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-background border border-input rounded-xl text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring appearance-none cursor-pointer"
+                      >
+                        <option value="qris">QRIS</option>
+                        <option value="cash">CASH</option>
+                        <option value="transfer">TRANSFER</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            {cart.length > 0 && (
+              <div className="p-6 border-t border-border bg-secondary/10 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground font-medium">Total</span>
+                  <span className="text-2xl font-bold text-primary">{formatRupiah(totalCartPrice)}</span>
+                </div>
+                <button
+                  disabled={isSubmittingOrder || cart.length === 0}
+                  onClick={submitOrder}
+                  className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmittingOrder ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Memproses...
+                    </>
+                  ) : (
+                    'Konfirmasi Pesanan'
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Order Success Modal ── */}
+      {lastOrder && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setLastOrder(null)} />
+          <div className="relative bg-card rounded-2xl shadow-xl border border-border/60 w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                <svg className="w-7 h-7 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <path d="m22 4-10 10-3-3" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-foreground">Pesanan Berhasil!</h2>
+              {lastOrder.queue_number && (
+                <p className="text-2xl font-black text-primary mt-1">PESANAN #{lastOrder.queue_number}</p>
+              )}
+              <p className="text-xs text-muted-foreground font-mono mt-1">#{lastOrder.order_number}</p>
+            </div>
+
+            {/* Order Info */}
+            <div className="bg-secondary/30 rounded-xl p-4 mb-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Pelanggan</span>
+                <span className="font-semibold text-foreground">{lastOrder.name}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">No. HP</span>
+                <span className="font-semibold text-foreground">{lastOrder.phone}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Tipe Order</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                  lastOrder.order_type === 'dinein'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : lastOrder.order_type === 'takeaway'
+                      ? 'bg-orange-50 text-orange-700 border-orange-200'
+                      : 'bg-gray-100 text-gray-600 border-gray-200'
+                }`}>
+                  {lastOrder.order_type === 'dinein' ? 'DINE-IN' : lastOrder.order_type === 'takeaway' ? 'TAKE-AWAY' : '-'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Status</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                  lastOrder.status === 'DONE' ? 'bg-green-50 text-green-700 border-green-200'
+                    : lastOrder.status === 'ON PROGRESS' ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                }`}>
+                  {lastOrder.status}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Pembayaran</span>
+                <span className="font-semibold text-foreground uppercase">{lastOrder.payment_method || '-'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Status Bayar</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                  lastOrder.payment_status === 'PAID'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-gray-100 text-gray-600 border-gray-200'
+                }`}>
+                  {lastOrder.payment_status || 'UNPAID'}
+                </span>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="border border-border/60 rounded-xl overflow-hidden mb-4">
+              <div className="px-4 py-2.5 bg-secondary/20 border-b border-border/60">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Rincian Menu</h3>
+              </div>
+              <div className="divide-y divide-border/40">
+                {lastOrder.order_menus.map((item, idx) => (
+                  <div key={idx} className="px-4 py-3 flex justify-between items-center text-sm">
+                    <div>
+                      <span className="font-semibold text-foreground">{item.menu.nama}</span>
+                      <span className="text-muted-foreground ml-2">{item.quantity}x {formatRupiah(item.menu.harga)}</span>
+                    </div>
+                    <span className="font-bold text-foreground">{formatRupiah(item.total_price)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 py-3 bg-secondary/10 border-t border-border/60 flex justify-between items-center">
+                <span className="font-bold text-foreground">Total</span>
+                <span className="text-xl font-black text-primary">{formatRupiah(lastOrder.total_price)}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setLastOrder(null)}
+                className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-semibold rounded-xl shadow-md"
+              >
+                Tutup
               </button>
             </div>
           </div>

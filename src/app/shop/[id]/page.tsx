@@ -59,12 +59,16 @@ interface OrderMenu {
 interface PastOrder {
   id: string;
   name: string;
+  phone: string;
   order_number: string;
   status: string;
   total_price: number;
   created_at: string;
   order_menus: OrderMenu[];
   queue_number: string | null;
+  order_type: string | null;
+  payment_status: string | null;
+  payment_method: string | null;
 }
 
 function formatRupiah(value: number): string {
@@ -152,6 +156,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
   const [pastOrders, setPastOrders] = useState<PastOrder[]>([]);
   const [isOrdersOpen, setIsOrdersOpen] = useState(false);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [lastOrder, setLastOrder] = useState<PastOrder | null>(null);
 
   const fetchPastOrders = async () => {
     const session = localStorage.getItem('unique_session');
@@ -234,8 +239,8 @@ export default function ShopDetailPage({ params }: { params: any }) {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (res.ok && data.status === 'OK') {
-        alert('Pesanan berhasil dibuat!');
+      if (res.ok && data.status === 'OK' && data.data) {
+        setLastOrder(data.data);
         setCart([]);
         setIsCartOpen(false);
         setCustomerForm({ name: '', phone: '' });
@@ -874,6 +879,107 @@ export default function ShopDetailPage({ params }: { params: any }) {
       {/* Lightbox */}
       {lightboxItems && (
         <Lightbox items={lightboxItems} startIndex={lightboxIndex} onClose={() => setLightboxItems(null)} />
+      )}
+
+      {/* Order Success Modal */}
+      {lastOrder && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm" onClick={() => setLastOrder(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl border border-primary/5 w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                <svg className="w-7 h-7 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <path d="m22 4-10 10-3-3" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-primary">Pesanan Berhasil!</h2>
+              {lastOrder.queue_number && (
+                <p className="text-2xl font-black text-primary mt-1">PESANAN #{lastOrder.queue_number}</p>
+              )}
+              <p className="text-xs text-on-surface-variant font-mono mt-1">#{lastOrder.order_number}</p>
+            </div>
+
+            {/* Order Info */}
+            <div className="bg-surface-container-low/50 rounded-xl p-4 mb-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-on-surface-variant">Pelanggan</span>
+                <span className="font-semibold text-primary">{lastOrder.name}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-on-surface-variant">No. HP</span>
+                <span className="font-semibold text-primary">{lastOrder.phone}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-on-surface-variant">Tipe Order</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                  lastOrder.order_type === 'dinein'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : lastOrder.order_type === 'takeaway'
+                      ? 'bg-orange-50 text-orange-700 border-orange-200'
+                      : 'bg-gray-100 text-gray-600 border-gray-200'
+                }`}>
+                  {lastOrder.order_type === 'dinein' ? 'DINE-IN' : lastOrder.order_type === 'takeaway' ? 'TAKE-AWAY' : '-'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-on-surface-variant">Status</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                  lastOrder.status === 'DONE' ? 'bg-green-50 text-green-700 border-green-200'
+                    : lastOrder.status === 'ON PROGRESS' ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                }`}>
+                  {lastOrder.status}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-on-surface-variant">Pembayaran</span>
+                <span className="font-semibold text-primary uppercase">{lastOrder.payment_method || '-'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-on-surface-variant">Status Bayar</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                  lastOrder.payment_status === 'PAID'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-gray-100 text-gray-600 border-gray-200'
+                }`}>
+                  {lastOrder.payment_status || 'UNPAID'}
+                </span>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="border border-primary/5 rounded-xl overflow-hidden mb-4">
+              <div className="px-4 py-2.5 bg-surface-container-low/30 border-b border-primary/5">
+                <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Rincian Menu</h3>
+              </div>
+              <div className="divide-y divide-primary/5">
+                {lastOrder.order_menus.map((item, idx) => (
+                  <div key={idx} className="px-4 py-3 flex justify-between items-center text-sm">
+                    <div>
+                      <span className="font-semibold text-primary">{item.menu?.nama}</span>
+                      <span className="text-on-surface-variant ml-2">{item.quantity}x {formatRupiah(item.menu?.harga || 0)}</span>
+                    </div>
+                    <span className="font-bold text-primary">{formatRupiah(item.total_price)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 py-3 bg-surface-container-low/20 border-t border-primary/5 flex justify-between items-center">
+                <span className="font-bold text-primary">Total</span>
+                <span className="text-xl font-black text-primary">{formatRupiah(lastOrder.total_price)}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <button
+              onClick={() => setLastOrder(null)}
+              className="w-full py-3 bg-primary text-white font-bold rounded-xl shadow-md"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Footer */}
