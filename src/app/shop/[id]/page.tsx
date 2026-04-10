@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { orderApi } from '@/lib/api';
 
 // ── Types ──
 
@@ -69,6 +70,9 @@ interface PastOrder {
   order_type: string | null;
   payment_status: string | null;
   payment_method: string | null;
+  payment_url: string | null;
+  qr_string: string | null;
+  qr_id: string | null;
 }
 
 function formatRupiah(value: number): string {
@@ -157,6 +161,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
   const [isOrdersOpen, setIsOrdersOpen] = useState(false);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [lastOrder, setLastOrder] = useState<PastOrder | null>(null);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
 
   const fetchPastOrders = async () => {
     const session = localStorage.getItem('unique_session');
@@ -173,6 +178,22 @@ export default function ShopDetailPage({ params }: { params: any }) {
       console.error('Failed to fetch past orders', e);
     }
     setIsLoadingOrders(false);
+  };
+
+  const handleCheckStatus = async () => {
+    if (!lastOrder) return;
+    setIsCheckingStatus(true);
+    try {
+      const res = await orderApi.getByOrderNumberPublic(lastOrder.order_number);
+      if (res.success && res.data?.payment_status === 'PAID') {
+        setLastOrder(null);
+        fetchPastOrders();
+      }
+    } catch (err) {
+      console.error('Failed to check status:', err);
+    } finally {
+      setIsCheckingStatus(false);
+    }
   };
 
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
@@ -901,6 +922,23 @@ export default function ShopDetailPage({ params }: { params: any }) {
               <p className="text-xs text-on-surface-variant font-mono mt-1">#{lastOrder.order_number}</p>
             </div>
 
+            {/* QRIS Display */}
+            {lastOrder.qr_string && lastOrder.payment_status === 'UNPAID' && (
+              <div className="mb-6 p-4 bg-white border-2 border-primary/10 rounded-2xl flex flex-col items-center justify-center shadow-inner">
+                <p className="text-[10px] font-bold text-primary mb-2 uppercase tracking-widest">Scan QRIS untuk Membayar</p>
+                <div className="bg-white p-2 rounded-lg shadow-sm border border-primary/5">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(lastOrder.qr_string)}`}
+                    alt="QRIS Code"
+                    className="w-48 h-48"
+                  />
+                </div>
+                <p className="text-[9px] text-on-surface-variant mt-2 text-center leading-tight">
+                  Berlaku untuk semua aplikasi pembayaran (Bank, OVO, GoPay, Dana, dll)
+                </p>
+              </div>
+            )}
+
             {/* Order Info */}
             <div className="bg-surface-container-low/50 rounded-xl p-4 mb-4 space-y-2">
               <div className="flex justify-between text-sm">
@@ -972,12 +1010,50 @@ export default function ShopDetailPage({ params }: { params: any }) {
             </div>
 
             {/* Actions */}
-            <button
-              onClick={() => setLastOrder(null)}
-              className="w-full py-3 bg-primary text-white font-bold rounded-xl shadow-md"
-            >
-              Tutup
-            </button>
+            <div className="flex flex-col gap-3">
+              {lastOrder.payment_url && lastOrder.payment_status === 'UNPAID' && (
+                <a
+                  href={lastOrder.payment_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-black rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <rect x="7" y="7" width="3" height="3"/>
+                    <rect x="14" y="7" width="3" height="3"/>
+                    <rect x="7" y="14" width="3" height="3"/>
+                    <path d="M14 14h3v3h-3z"/>
+                  </svg>
+                  BAYAR SEKARANG (QRIS / Bank)
+                </a>
+              )}
+              
+              <button
+                onClick={handleCheckStatus}
+                disabled={isCheckingStatus}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md disabled:bg-blue-300 flex items-center justify-center gap-2"
+              >
+                {isCheckingStatus ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Mengecek...
+                  </>
+                ) : (
+                  'Cek Status Pembayaran'
+                )}
+              </button>
+
+              <button
+                onClick={() => setLastOrder(null)}
+                className="w-full py-3 bg-primary text-white font-bold rounded-xl shadow-md"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

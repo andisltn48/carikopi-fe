@@ -151,6 +151,8 @@ export interface CoffeeShop {
   whatsapp?: string;
   facebook?: string;
   twitter?: string;
+  xendit_api_key?: string;
+  xendit_callback_token?: string;
 }
 
 export interface CoffeeShopSubmitRequest {
@@ -166,6 +168,8 @@ export interface CoffeeShopSubmitRequest {
   whatsapp?: string;
   facebook?: string;
   twitter?: string;
+  xendit_api_key?: string;
+  xendit_callback_token?: string;
 }
 
 export const coffeeshopApi = {
@@ -447,6 +451,9 @@ export interface Order {
   created_at: string;
   queue_number: string | null;
   order_type: string | null;
+  payment_url: string | null;
+  qr_string: string | null;
+  qr_id: string | null;
 }
 
 export const orderApi = {
@@ -485,6 +492,10 @@ export const orderApi = {
       },
       body: JSON.stringify(payload),
     });
+  },
+  
+  getByOrderNumberPublic: (orderNumber: string) => {
+    return request<Order>(`/api/public/orders/get-by-order-number/${orderNumber}`);
   },
 };
 

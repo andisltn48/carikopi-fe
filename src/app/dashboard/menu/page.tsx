@@ -1110,10 +1110,28 @@ export default function MenuPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3">
+              {lastOrder.payment_url && lastOrder.payment_status === 'UNPAID' && (
+                <a
+                  href={lastOrder.payment_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-black rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <rect x="7" y="7" width="3" height="3"/>
+                    <rect x="14" y="7" width="3" height="3"/>
+                    <rect x="7" y="14" width="3" height="3"/>
+                    <path d="M14 14h3v3h-3z"/>
+                  </svg>
+                  BAYAR SEKARANG (QRIS / Bank)
+                </a>
+              )}
+              
               <button
                 onClick={() => setLastOrder(null)}
-                className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-semibold rounded-xl shadow-md"
+                className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl shadow-md"
               >
                 Tutup
               </button>
