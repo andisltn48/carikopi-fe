@@ -38,6 +38,23 @@ interface BackendResponse<T> {
   paging?: Paging;
 }
 
+/**
+ * Handle 401 Unauthorized globally: clear auth data and redirect to login.
+ * Returns true if a 401 was detected (so callers can bail out early).
+ */
+function handle401(response: Response): boolean {
+  if (response.status === 401) {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('carikopi_token');
+      localStorage.removeItem('carikopi_username');
+      localStorage.removeItem('carikopi_role');
+      window.location.href = '/login';
+    }
+    return true;
+  }
+  return false;
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -63,6 +80,11 @@ async function request<T>(
 
   try {
     const response = await fetch(url, config);
+
+    if (handle401(response)) {
+      return { success: false, message: 'Sesi telah berakhir. Silakan login kembali.' };
+    }
+
     const body: BackendResponse<T> = await response.json();
 
     if (!response.ok || body.status === 'ERROR') {
@@ -169,6 +191,7 @@ export const coffeeshopApi = {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+      if (handle401(response)) return { success: false, message: 'Sesi telah berakhir.' };
       const body = await response.json();
 
       if (!response.ok || body.status === 'ERROR') {
@@ -241,6 +264,7 @@ export const menuApi = {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+      if (handle401(response)) return { success: false, message: 'Sesi telah berakhir.' };
       const data = await response.json();
       if (!response.ok || data.status === 'ERROR') {
         return { success: false, message: data.errors || 'Submit gagal' };
@@ -268,6 +292,7 @@ export const menuApi = {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+      if (handle401(response)) return { success: false, message: 'Sesi telah berakhir.' };
       const data = await response.json();
       if (!response.ok || data.status === 'ERROR') {
         return { success: false, message: data.errors || 'Update gagal' };
@@ -288,6 +313,7 @@ export const menuApi = {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+      if (handle401(response)) return { success: false, message: 'Sesi telah berakhir.' };
       const data = await response.json();
       if (!response.ok || data.status === 'ERROR') {
         return { success: false, message: data.errors || 'Upload gagal' };
@@ -304,6 +330,7 @@ export const menuApi = {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (handle401(response)) return { success: false, message: 'Sesi telah berakhir.' };
       const data = await response.json();
       if (!response.ok || data.status === 'ERROR') {
         return { success: false, message: data.errors || 'Hapus foto gagal' };
@@ -320,6 +347,7 @@ export const menuApi = {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (handle401(response)) return { success: false, message: 'Sesi telah berakhir.' };
       const data = await response.json();
       if (!response.ok || data.status === 'ERROR') {
         return { success: false, message: data.errors || 'Hapus menu gagal' };
@@ -362,6 +390,7 @@ export const galleryApi = {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+      if (handle401(response)) return { success: false, message: 'Sesi telah berakhir.' };
       const data = await response.json();
       if (!response.ok || data.status === 'ERROR') {
         return { success: false, message: data.errors || 'Submit gagal' };
@@ -378,6 +407,7 @@ export const galleryApi = {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (handle401(response)) return { success: false, message: 'Sesi telah berakhir.' };
       const data = await response.json();
       if (!response.ok || data.status === 'ERROR') {
         return { success: false, message: data.errors || 'Hapus galeri gagal' };
