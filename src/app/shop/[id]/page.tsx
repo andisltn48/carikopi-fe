@@ -367,10 +367,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
     };
   }, [params, nextParams]);
 
-  const openLightbox = (fotos: FotoItem[], index: number) => {
-    setLightboxFotos(fotos);
-    setLightboxIndex(index);
-  };
+
 
   if (!hasMounted) {
     return (
