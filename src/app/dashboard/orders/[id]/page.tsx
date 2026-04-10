@@ -118,8 +118,12 @@ export default function OrderDetailPage() {
             </svg>
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              Detail Pesanan
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2 flex-wrap">
+              {order.queue_number ? (
+                <span>Pesanan #{order.queue_number}</span>
+              ) : (
+                <span>Detail Pesanan</span>
+              )}
               <span className="text-sm font-mono text-muted-foreground bg-secondary px-2 py-0.5 rounded-md border border-border">
                 #{order.order_number}
               </span>
@@ -270,6 +274,26 @@ export default function OrderDetailPage() {
                     <p className="text-xs text-muted-foreground">Nomor Telepon</p>
                     <p className="font-bold text-foreground">{order.phone}</p>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-border/60" />
+
+            <div>
+              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Detail Pesanan</h2>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Tipe Order</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                    order.order_type === 'dinein'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : order.order_type === 'takeaway'
+                        ? 'bg-orange-50 text-orange-700 border-orange-200'
+                        : 'bg-gray-100 text-gray-600 border-gray-200'
+                  }`}>
+                    {order.order_type === 'dinein' ? 'DINE-IN' : order.order_type === 'takeaway' ? 'TAKE-AWAY' : '-'}
+                  </span>
                 </div>
               </div>
             </div>

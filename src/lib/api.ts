@@ -445,12 +445,15 @@ export interface Order {
   payment_method: string | null;
   order_number: string;
   created_at: string;
+  queue_number: string | null;
+  order_type: string | null;
 }
 
 export const orderApi = {
-  getByShopId: (token: string, shopId: string, params?: { orderNumber?: string; page?: number; size?: number }) => {
+  getByShopId: (token: string, shopId: string, params?: { orderNumber?: string; status?: string; page?: number; size?: number }) => {
     const searchParams = new URLSearchParams();
     if (params?.orderNumber) searchParams.append('order_number', params.orderNumber);
+    if (params?.status) searchParams.append('status', params.status);
     if (params?.page !== undefined) searchParams.append('page', params.page.toString());
     if (params?.size !== undefined) searchParams.append('size', params.size.toString());
 

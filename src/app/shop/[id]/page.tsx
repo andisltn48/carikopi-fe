@@ -64,6 +64,7 @@ interface PastOrder {
   total_price: number;
   created_at: string;
   order_menus: OrderMenu[];
+  queue_number: string | null;
 }
 
 function formatRupiah(value: number): string {
@@ -138,6 +139,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [customerForm, setCustomerForm] = useState({ name: '', phone: '' });
+  const [orderType, setOrderType] = useState<'dinein' | 'takeaway'>('dinein');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
   const [activeMenuCategory, setActiveMenuCategory] = useState('Semua');
@@ -216,6 +218,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
       total_price: totalPrice,
       shop_id: shopId,
       unique_session: session,
+      order_type: orderType,
       order_menus: cart.map((item) => ({
         menu_id: item.menu.id,
         quantity: item.quantity,
@@ -236,6 +239,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
         setCart([]);
         setIsCartOpen(false);
         setCustomerForm({ name: '', phone: '' });
+        setOrderType('dinein');
         fetchPastOrders();
       } else {
         alert('Gagal membuat pesanan: ' + (data.message || 'Error tidak diketahui'));
@@ -763,6 +767,17 @@ export default function ShopDetailPage({ params }: { params: any }) {
                           placeholder="Contoh: 081234567..."
                         />
                       </div>
+                      <div>
+                        <label className="text-xs font-bold text-primary/60 uppercase tracking-widest block mb-2">Tipe Order</label>
+                        <select
+                          value={orderType}
+                          onChange={(e) => setOrderType(e.target.value as 'dinein' | 'takeaway')}
+                          className="w-full px-4 py-3 bg-surface-container-low border border-primary/5 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-primary font-medium appearance-none cursor-pointer"
+                        >
+                          <option value="dinein">Dine-in</option>
+                          <option value="takeaway">Take-away</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -819,10 +834,11 @@ export default function ShopDetailPage({ params }: { params: any }) {
                   <div key={order.id} className="p-5 rounded-2xl border border-primary/5 bg-surface-container-low/50 shadow-sm space-y-4">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">PESANAN #{order.order_number.slice(-6).toUpperCase()}</p>
+                        <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">PESANAN #{order.queue_number || '-'}</p>
                         <p className="text-sm font-medium text-on-surface-variant">
                           {new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
+                        <p className="text-[11px] font-mono text-on-surface-variant/70 mt-0.5">{order.order_number}</p>
                       </div>
                       <span className={`px-3 py-1 text-[10px] font-bold rounded-full uppercase ${
                         order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-primary/10 text-primary'

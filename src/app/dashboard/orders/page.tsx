@@ -12,6 +12,7 @@ export default function OrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [error, setError] = useState('');
 
   // Pagination state
@@ -19,11 +20,12 @@ export default function OrdersPage() {
   const [paging, setPaging] = useState<Paging | null>(null);
   const pageSize = 10;
 
-  const fetchOrders = useCallback(async (sid: string, query?: string, page: number = 0) => {
+  const fetchOrders = useCallback(async (sid: string, query?: string, page: number = 0, status?: string) => {
     if (!token) return;
     setIsLoading(true);
     const result = await orderApi.getByShopId(token, sid, {
       orderNumber: query,
+      status: status || undefined,
       page: page,
       size: pageSize
     });
@@ -72,12 +74,12 @@ export default function OrdersPage() {
     }
   }, [token, shopId]);
 
-  // Fetch orders when shopId, debouncedQuery, or currentPage changes
+  // Fetch orders when shopId, debouncedQuery, currentPage, or statusFilter changes
   useEffect(() => {
     if (shopId) {
-      fetchOrders(shopId, debouncedQuery, currentPage);
+      fetchOrders(shopId, debouncedQuery, currentPage, statusFilter);
     }
-  }, [shopId, debouncedQuery, currentPage, fetchOrders]);
+  }, [shopId, debouncedQuery, currentPage, statusFilter, fetchOrders]);
 
   const getStatusColor = (status: string) => {
     switch (status.toUpperCase()) {
@@ -135,6 +137,31 @@ export default function OrdersPage() {
             <path d="m21 21-4.3-4.3" />
           </svg>
         </div>
+      </div>
+
+      {/* Status Filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { label: 'Semua', value: '' },
+          { label: 'Pending', value: 'PENDING' },
+          { label: 'On Progress', value: 'ON PROGRESS' },
+          { label: 'Done', value: 'DONE' },
+        ].map((filter) => (
+          <button
+            key={filter.value}
+            onClick={() => {
+              setStatusFilter(filter.value);
+              setCurrentPage(0);
+            }}
+            className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+              statusFilter === filter.value
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-brown-700/20'
+                : 'bg-card text-muted-foreground border-border hover:border-primary/40'
+            }`}
+          >
+            {filter.label}
+          </button>
+        ))}
       </div>
 
       {error && (
