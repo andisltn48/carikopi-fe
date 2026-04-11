@@ -151,8 +151,16 @@ export interface CoffeeShop {
   whatsapp?: string;
   facebook?: string;
   twitter?: string;
-  xendit_api_key?: string;
-  xendit_callback_token?: string;
+}
+
+export interface XenditApiRequest {
+  xendit_api_key: string;
+  xendit_callback_token: string;
+}
+
+export interface XenditApiResponse {
+  xendit_api_key: string;
+  xendit_callback_token: string;
 }
 
 export interface CoffeeShopSubmitRequest {
@@ -168,8 +176,6 @@ export interface CoffeeShopSubmitRequest {
   whatsapp?: string;
   facebook?: string;
   twitter?: string;
-  xendit_api_key?: string;
-  xendit_callback_token?: string;
 }
 
 export const coffeeshopApi = {
@@ -206,6 +212,18 @@ export const coffeeshopApi = {
       return { success: false, message: error instanceof Error ? error.message : 'Network error' };
     }
   },
+
+  getXenditApi: (token: string, shopId: string) =>
+    request<XenditApiResponse>(`/api/coffeeshop/xendit-api/${shopId}`, {
+      headers: createAuthHeaders(token),
+    }),
+
+  updateXenditApi: (token: string, shopId: string, body: XenditApiRequest) =>
+    request<XenditApiResponse>(`/api/coffeeshop/xendit-api/update/${shopId}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: createAuthHeaders(token),
+    }),
 };
 
 export function createAuthHeaders(token: string): HeadersInit {

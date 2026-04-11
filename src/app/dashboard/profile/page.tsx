@@ -32,10 +32,6 @@ export default function ProfilePage() {
   const [whatsapp, setWhatsapp] = useState('');
   const [facebook, setFacebook] = useState('');
   const [twitter, setTwitter] = useState('');
-  const [xenditApiKey, setXenditApiKey] = useState('');
-  const [xenditCallbackToken, setXenditCallbackToken] = useState('');
-  const [showXenditApiKey, setShowXenditApiKey] = useState(false);
-  const [showXenditCallback, setShowXenditCallback] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -58,8 +54,6 @@ export default function ProfilePage() {
         setWhatsapp(result.data.whatsapp || '');
         setFacebook(result.data.facebook || '');
         setTwitter(result.data.twitter || '');
-        setXenditApiKey(result.data.xendit_api_key || '');
-        setXenditCallbackToken(result.data.xendit_callback_token || '');
         setHasShop(true);
       } else {
         setHasShop(false);
@@ -91,8 +85,7 @@ export default function ProfilePage() {
       whatsapp,
       facebook,
       twitter,
-      xendit_api_key: xenditApiKey,
-      xendit_callback_token: xenditCallbackToken,
+      twitter,
     };
 
     const result = await coffeeshopApi.submit(token, body, shop?.id);
@@ -356,46 +349,6 @@ export default function ProfilePage() {
               <div className="space-y-1">
                 <label htmlFor="twitter" className="block text-xs font-medium text-muted-foreground">Twitter</label>
                 <input id="twitter" type="url" value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="https://twitter.com/..." className="w-full px-4 py-2.5 bg-brown-50 border border-input rounded-xl text-sm" />
-              </div>
-            </div>
-          </div>
-
-          {/* Integrasi Pembayaran */}
-          <div>
-            <h3 className="text-sm font-medium text-foreground mb-1">Integrasi Pembayaran (Xendit)</h3>
-            <p className="text-xs text-muted-foreground mb-3">Hubungkan akun Xendit untuk menerima pembayaran online.</p>
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label htmlFor="xendit-api-key" className="block text-xs font-medium text-muted-foreground">Xendit API Key</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  </span>
-                  <input id="xendit-api-key" type={showXenditApiKey ? 'text' : 'password'} value={xenditApiKey} onChange={(e) => setXenditApiKey(e.target.value)} placeholder="xnd_production_xxx..." className="w-full pl-9 pr-10 py-2.5 bg-brown-50 border border-input rounded-xl text-sm font-mono" />
-                  <button type="button" onClick={() => setShowXenditApiKey(!showXenditApiKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground">
-                    {showXenditApiKey ? (
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                    ) : (
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <label htmlFor="xendit-callback-token" className="block text-xs font-medium text-muted-foreground">Xendit Callback Token</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  </span>
-                  <input id="xendit-callback-token" type={showXenditCallback ? 'text' : 'password'} value={xenditCallbackToken} onChange={(e) => setXenditCallbackToken(e.target.value)} placeholder="callback_token_xxx..." className="w-full pl-9 pr-10 py-2.5 bg-brown-50 border border-input rounded-xl text-sm font-mono" />
-                  <button type="button" onClick={() => setShowXenditCallback(!showXenditCallback)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground">
-                    {showXenditCallback ? (
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                    ) : (
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    )}
-                  </button>
-                </div>
               </div>
             </div>
           </div>

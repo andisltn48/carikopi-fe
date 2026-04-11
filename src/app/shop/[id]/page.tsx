@@ -79,6 +79,17 @@ function formatRupiah(value: number): string {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 }
 
+function getOrderStatusColor(status: string) {
+  switch (status?.toUpperCase()) {
+    case 'PENDING': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    case 'ON PROGRESS': return 'bg-blue-100 text-blue-700 border-blue-200';
+    case 'COMPLETED':
+    case 'DONE': return 'bg-green-100 text-green-700 border-green-200';
+    case 'CANCELLED': return 'bg-red-100 text-red-700 border-red-200';
+    default: return 'bg-primary/10 text-primary border-primary/5';
+  }
+}
+
 // ── Photo Lightbox ──
 
 function Lightbox({ items, startIndex, onClose }: { items: { foto: FotoItem; title: string }[]; startIndex: number; onClose: () => void }) {
@@ -865,9 +876,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
                         </p>
                         <p className="text-[11px] font-mono text-on-surface-variant/70 mt-0.5">{order.order_number}</p>
                       </div>
-                      <span className={`px-3 py-1 text-[10px] font-bold rounded-full uppercase ${
-                        order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-primary/10 text-primary'
-                      }`}>
+                      <span className={`px-3 py-1 text-[10px] font-bold rounded-full uppercase border ${getOrderStatusColor(order.status)}`}>
                         {order.status}
                       </span>
                     </div>

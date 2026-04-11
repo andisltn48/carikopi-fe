@@ -6,7 +6,14 @@ import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const sidebarLinks = [
+interface NavLink {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  subItems?: { href: string; label: string }[];
+}
+
+const sidebarLinks: NavLink[] = [
   {
     href: '/dashboard/menu',
     label: 'Menu',
@@ -61,6 +68,10 @@ const sidebarLinks = [
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
       </svg>
     ),
+    subItems: [
+      { href: '/dashboard/settings/qrcode', label: 'QR Code Toko' },
+      { href: '/dashboard/settings/xendit-api', label: 'Xendit API' },
+    ],
   }
 ];
 
@@ -73,6 +84,13 @@ export default function DashboardLayout({
   const { isAuthenticated, isLoading, username, logout } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [openSubMenus, setOpenSubMenus] = useState<string[]>([]);
+
+  const toggleSubMenu = (label: string) => {
+    setOpenSubMenus(prev => 
+      prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]
+    );
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -134,21 +152,74 @@ export default function DashboardLayout({
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {sidebarLinks.map((link) => {
-            const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
+            const hasSubItems = link.subItems && link.subItems.length > 0;
+            const isSubMenuOpen = openSubMenus.includes(link.label);
+            const isActive = pathname === link.href || (hasSubItems && link.subItems?.some(s => pathname === s.href));
+            
             return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-md shadow-brown-700/20'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                {link.icon}
-                {link.label}
-              </Link>
+              <div key={link.href} className="space-y-1">
+                {hasSubItems ? (
+                  <button
+                    onClick={() => toggleSubMenu(link.label)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-secondary/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {link.icon}
+                      {link.label}
+                    </div>
+                    <svg
+                      className={`w-4 h-4 transition-transform duration-200 ${isSubMenuOpen ? 'rotate-180' : ''}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                ) : (
+                  <Link
+                    href={link.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground shadow-md shadow-brown-700/20'
+                        : 'text-muted-foreground hover:bg-secondary/50'
+                    }`}
+                  >
+                    {link.icon}
+                    {link.label}
+                  </Link>
+                )}
+
+                {hasSubItems && isSubMenuOpen && (
+                  <div className="ml-9 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {link.subItems?.map((subItem) => {
+                      const isSubActive = pathname === subItem.href;
+                      return (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.href}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            isSubActive
+                              ? 'text-primary'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {subItem.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
