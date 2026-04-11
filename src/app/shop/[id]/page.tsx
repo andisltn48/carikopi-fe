@@ -162,6 +162,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [lastOrder, setLastOrder] = useState<PastOrder | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
 
   const fetchPastOrders = async () => {
     const session = localStorage.getItem('unique_session');
@@ -188,6 +189,7 @@ export default function ShopDetailPage({ params }: { params: any }) {
       if (res.success && res.data?.payment_status === 'PAID') {
         setLastOrder(null);
         fetchPastOrders();
+        setShowPaymentSuccessModal(true);
       }
     } catch (err) {
       console.error('Failed to check status:', err);
@@ -1051,6 +1053,30 @@ export default function ShopDetailPage({ params }: { params: any }) {
                 Tutup
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Success Confirmation Modal */}
+      {showPaymentSuccessModal && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowPaymentSuccessModal(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl border border-primary/10 w-full max-w-sm p-8 text-center animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6 shadow-sm border-4 border-white">
+              <svg className="w-10 h-10 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-primary mb-3">Pembayaran Berhasil!</h2>
+            <p className="text-on-surface-variant leading-relaxed mb-8">
+              Terima kasih! Pembayaran Anda telah kami terima. Silakan tunggu pesanan Anda diproses.
+            </p>
+            <button
+              onClick={() => setShowPaymentSuccessModal(false)}
+              className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-lg hover:bg-primary-dark transition-all active:scale-[0.98]"
+            >
+              Mengerti
+            </button>
           </div>
         </div>
       )}

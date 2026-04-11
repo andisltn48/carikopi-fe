@@ -90,6 +90,15 @@ export default function OrdersPage() {
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
+  
+  const getPaymentStatusColor = (status: string | null) => {
+    switch (status?.toUpperCase()) {
+      case 'PAID': return 'bg-green-100 text-green-700 border-green-200';
+      case 'PENDING': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'UNPAID': return 'bg-gray-100 text-gray-700 border-gray-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
 
   const handlePageChange = (newPage: number) => {
     if (paging && newPage >= 0 && newPage < paging.totalPage) {
@@ -177,9 +186,11 @@ export default function OrdersPage() {
             <thead>
               <tr className="bg-secondary/50 border-b border-border">
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Order No</th>
+                <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Queue</th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pelanggan</th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Menu</th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total</th>
+                <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment</th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waktu</th>
                 <th className="px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Aksi</th>
@@ -191,6 +202,11 @@ export default function OrdersPage() {
                   <tr key={order.id} className="hover:bg-secondary/30 transition-colors group">
                     <td className="px-6 py-4 font-mono text-xs font-medium text-foreground">
                       {order.order_number}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-sm font-black text-primary bg-primary/5 px-2 py-1 rounded-lg">
+                        #{order.queue_number || '-'}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
@@ -213,6 +229,11 @@ export default function OrdersPage() {
                     <td className="px-6 py-4">
                       <span className="text-sm font-semibold text-primary">
                         Rp {order.total_price.toLocaleString('id-ID')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-xs font-medium">
+                      <span className={`px-2 py-0.5 rounded-full border ${getPaymentStatusColor(order.payment_status)}`}>
+                        {order.payment_status || 'UNPAID'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs font-medium">
@@ -244,7 +265,7 @@ export default function OrdersPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground text-sm italic">
+                  <td colSpan={9} className="px-6 py-12 text-center text-muted-foreground text-sm italic">
                     {isLoading ? 'Sedang memuat...' : 'Tidak ada pesanan ditemukan.'}
                   </td>
                 </tr>
