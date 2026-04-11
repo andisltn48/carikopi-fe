@@ -85,7 +85,6 @@ export default function ProfilePage() {
       whatsapp,
       facebook,
       twitter,
-      twitter,
     };
 
     const result = await coffeeshopApi.submit(token, body, shop?.id);
