@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [registerToken, setRegisterToken] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +33,11 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const result = await authApi.register({ username, password });
+      const result = await authApi.register({ 
+        username, 
+        password, 
+        register_token: registerToken.trim() || null 
+      });
 
       if (result.success) {
         router.push('/login');
@@ -217,6 +222,31 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+            </div>
+            {/* Register Token */}
+            <div className="space-y-2">
+              <label
+                htmlFor="register-token"
+                className="block text-sm font-medium text-foreground"
+              >
+                Register Token (Opsional)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <svg className="w-5 h-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3y" />
+                  </svg>
+                </div>
+                <input
+                  id="register-token"
+                  type="text"
+                  value={registerToken}
+                  onChange={(e) => setRegisterToken(e.target.value)}
+                  placeholder="Token registrasi coffee shop"
+                  className="w-full pl-11 pr-4 py-3 bg-brown-50 border border-input rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">masukkan register token coffee shop anda</p>
             </div>
 
             {/* Submit button */}

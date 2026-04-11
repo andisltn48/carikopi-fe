@@ -6,9 +6,8 @@ import { coffeeshopApi, orderApi, type Order, type Paging } from '@/lib/api';
 import Link from 'next/link';
 
 export default function OrdersPage() {
-  const { token } = useAuth();
+  const { token, shopId } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [shopId, setShopId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -51,26 +50,10 @@ export default function OrdersPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Initial shop ID fetch
   useEffect(() => {
-    // If token is definitely not coming (auth finished loading), stop loading
-    if (!token) {
-      // We don't set isLoading(false) here yet to give AuthContext a chance to load
+    if (!token && !shopId) {
+      if (!shopId && !token) setIsLoading(false);
       return;
-    }
-
-    const init = async () => {
-      const shopResult = await coffeeshopApi.getMine(token);
-      if (shopResult.success && shopResult.data) {
-        setShopId(shopResult.data.id);
-      } else {
-        setError('Gagal memuat informasi toko. Pastikan profil toko sudah dibuat.');
-        setIsLoading(false);
-      }
-    };
-
-    if (!shopId) {
-      init();
     }
   }, [token, shopId]);
 

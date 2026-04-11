@@ -9,8 +9,7 @@ import {
 } from '@/lib/api';
 
 export default function GalleryPage() {
-  const { token } = useAuth();
-  const [shopId, setShopId] = useState<string | null>(null);
+  const { token, shopId } = useAuth();
   const [galleries, setGalleries] = useState<GalleryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,18 +30,17 @@ export default function GalleryPage() {
   const [zoomTarget, setZoomTarget] = useState<GalleryItem | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !shopId) {
+      if (!shopId && !token) setIsLoading(false);
+      return;
+    }
 
     const load = async () => {
       setIsLoading(true);
       try {
-        const shopResult = await coffeeshopApi.getMine(token);
-        if (shopResult.success && shopResult.data) {
-          setShopId(shopResult.data.id);
-          const galleryResult = await galleryApi.getByShop(token, shopResult.data.id);
-          if (galleryResult.success && galleryResult.data) {
-            setGalleries(galleryResult.data);
-          }
+        const galleryResult = await galleryApi.getByShop(token, shopId);
+        if (galleryResult.success && galleryResult.data) {
+          setGalleries(galleryResult.data);
         }
       } catch (err) {
         console.error('Failed to load gallery:', err);
@@ -53,7 +51,7 @@ export default function GalleryPage() {
     };
 
     load();
-  }, [token]);
+  }, [token, shopId]);
 
   const refreshGalleries = async () => {
     if (!token || !shopId) return;

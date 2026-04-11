@@ -5,8 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { coffeeshopApi, type XenditApiRequest } from '@/lib/api';
 
 export default function XenditApiPage() {
-  const { token } = useAuth();
-  const [shopId, setShopId] = useState<string | null>(null);
+  const { token, shopId } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -19,30 +18,26 @@ export default function XenditApiPage() {
   const [showCallbackToken, setShowCallbackToken] = useState(false);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !shopId) {
+      if (!shopId && !token) setIsLoading(false);
+      return;
+    }
 
     const loadData = async () => {
       setIsLoading(true);
-      // First get shop ID
-      const shopResult = await coffeeshopApi.getMine(token);
-      if (shopResult.success && shopResult.data) {
-        const id = shopResult.data.id;
-        setShopId(id);
-
-        // Then get Xendit API data
-        const xenditResult = await coffeeshopApi.getXenditApi(token, id);
-        if (xenditResult.success && xenditResult.data) {
-          setApiKey(xenditResult.data.xendit_api_key || '');
-          setCallbackToken(xenditResult.data.xendit_callback_token || '');
-        }
-      } else {
-        setError(shopResult.message || 'Gagal memuat profil toko.');
+      // Get Xendit API data directly using shopId from context
+      const xenditResult = await coffeeshopApi.getXenditApi(token, shopId);
+      if (xenditResult.success && xenditResult.data) {
+        setApiKey(xenditResult.data.xendit_api_key || '');
+        setCallbackToken(xenditResult.data.xendit_callback_token || '');
+      } else if (!xenditResult.success) {
+        setError(xenditResult.message || 'Gagal memuat konfigurasi Xendit.');
       }
       setIsLoading(false);
     };
 
     loadData();
-  }, [token]);
+  }, [token, shopId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

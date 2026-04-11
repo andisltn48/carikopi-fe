@@ -257,6 +257,39 @@ export default function ProfilePage() {
             />
           </div>
 
+          {/* Register Token - Read Only */}
+          {shop?.register_token && (
+            <div className="space-y-2">
+              <label htmlFor="register-token" className="block text-sm font-medium text-foreground">
+                Register Token
+              </label>
+              <div className="relative group">
+                <input
+                  id="register-token"
+                  type="text"
+                  value={shop.register_token}
+                  readOnly
+                  className="w-full px-4 py-3 bg-brown-100/50 border border-input rounded-xl text-muted-foreground font-mono text-sm cursor-default focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(shop.register_token || '');
+                    alert('Token disalin ke clipboard!');
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-brown-200 rounded-lg transition-colors"
+                  title="Salin Token"
+                >
+                  <svg className="w-4 h-4 text-brown-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">Token ini digunakan untuk pendaftaran pengguna baru di toko Anda.</p>
+            </div>
+          )}
+
           {/* Alamat & Kota */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-2">

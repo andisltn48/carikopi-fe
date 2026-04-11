@@ -81,7 +81,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { isAuthenticated, isLoading, username, logout } = useAuth();
+  const { isAuthenticated, isLoading, username, logout, role, refreshPrivileges } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openSubMenus, setOpenSubMenus] = useState<string[]>([]);
@@ -97,6 +97,12 @@ export default function DashboardLayout({
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      refreshPrivileges();
+    }
+  }, [isAuthenticated, refreshPrivileges]);
 
   if (isLoading) {
     return (
@@ -151,77 +157,86 @@ export default function DashboardLayout({
 
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {sidebarLinks.map((link) => {
-            const hasSubItems = link.subItems && link.subItems.length > 0;
-            const isSubMenuOpen = openSubMenus.includes(link.label);
-            const isActive = pathname === link.href || (hasSubItems && link.subItems?.some(s => pathname === s.href));
-            
-            return (
-              <div key={link.href} className="space-y-1">
-                {hasSubItems ? (
-                  <button
-                    onClick={() => toggleSubMenu(link.label)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-secondary/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
+          {sidebarLinks
+            .filter((link) => {
+              // role 2: All
+              // role 3: Menu, Pesanan, Galeri
+              if (role === 3) {
+                return ['Menu', 'Pesanan', 'Galeri'].includes(link.label);
+              }
+              return true;
+            })
+            .map((link) => {
+              const hasSubItems = link.subItems && link.subItems.length > 0;
+              const isSubMenuOpen = openSubMenus.includes(link.label);
+              const isActive = pathname === link.href || (hasSubItems && link.subItems?.some(s => pathname === s.href));
+              
+              return (
+                <div key={link.href} className="space-y-1">
+                  {hasSubItems ? (
+                    <button
+                      onClick={() => toggleSubMenu(link.label)}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        isActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-secondary/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {link.icon}
+                        {link.label}
+                      </div>
+                      <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${isSubMenuOpen ? 'rotate-180' : ''}`}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground shadow-md shadow-brown-700/20'
+                          : 'text-muted-foreground hover:bg-secondary/50'
+                      }`}
+                    >
                       {link.icon}
                       {link.label}
-                    </div>
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${isSubMenuOpen ? 'rotate-180' : ''}`}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                ) : (
-                  <Link
-                    href={link.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? 'bg-primary text-primary-foreground shadow-md shadow-brown-700/20'
-                        : 'text-muted-foreground hover:bg-secondary/50'
-                    }`}
-                  >
-                    {link.icon}
-                    {link.label}
-                  </Link>
-                )}
+                    </Link>
+                  )}
 
-                {hasSubItems && isSubMenuOpen && (
-                  <div className="ml-9 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                    {link.subItems?.map((subItem) => {
-                      const isSubActive = pathname === subItem.href;
-                      return (
-                        <Link
-                          key={subItem.href}
-                          href={subItem.href}
-                          onClick={() => setSidebarOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                            isSubActive
-                              ? 'text-primary'
-                              : 'text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          {subItem.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  {hasSubItems && isSubMenuOpen && (
+                    <div className="ml-9 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                      {link.subItems?.map((subItem) => {
+                        const isSubActive = pathname === subItem.href;
+                        return (
+                          <Link
+                            key={subItem.href}
+                            href={subItem.href}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              isSubActive
+                                ? 'text-primary'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            {subItem.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </nav>
 
         {/* User & Logout */}

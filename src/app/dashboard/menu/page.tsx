@@ -131,8 +131,7 @@ function MenuCard({
 // ── Main Page ──
 
 export default function MenuPage() {
-  const { token } = useAuth();
-  const [shopId, setShopId] = useState<string | null>(null);
+  const { token, shopId } = useAuth();
   const [menus, setMenus] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -179,25 +178,22 @@ export default function MenuPage() {
   // ── Load Shop & Menus ──
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !shopId) {
+      if (!shopId && !token) setIsLoading(false);
+      return;
+    }
 
     const load = async () => {
       setIsLoading(true);
-      // Get shop first
-      const shopResult = await coffeeshopApi.getMine(token);
-      if (shopResult.success && shopResult.data) {
-        setShopId(shopResult.data.id);
-        // Then get menus
-        const menuResult = await menuApi.getByShop(token, shopResult.data.id);
-        if (menuResult.success && menuResult.data) {
-          setMenus(menuResult.data);
-        }
+      const menuResult = await menuApi.getByShop(token, shopId);
+      if (menuResult.success && menuResult.data) {
+        setMenus(menuResult.data);
       }
       setIsLoading(false);
     };
 
     load();
-  }, [token]);
+  }, [token, shopId]);
 
   const refreshMenus = async () => {
     if (!token || !shopId) return;

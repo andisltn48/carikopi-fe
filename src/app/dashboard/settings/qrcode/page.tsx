@@ -5,27 +5,13 @@ import { useAuth } from '@/context/AuthContext';
 import { coffeeshopApi } from '@/lib/api';
 
 export default function QRCodePage() {
-  const { token } = useAuth();
-  const [shopId, setShopId] = useState<string | null>(null);
+  const { token, shopId } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!token) return;
-
-    const load = async () => {
-      setIsLoading(true);
-      const result = await coffeeshopApi.getMine(token);
-      if (result.success && result.data) {
-        setShopId(result.data.id);
-      } else {
-        setError(result.message || 'Gagal memuat profil toko.');
-      }
-      setIsLoading(false);
-    };
-
-    load();
-  }, [token]);
+    setIsLoading(false);
+  }, [shopId]);
 
   const publicUrl = shopId ? `${window.location.origin}/shop/${shopId}` : '';
   const qrUrl = publicUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(publicUrl)}` : '';

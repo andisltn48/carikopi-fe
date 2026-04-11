@@ -27,6 +27,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
   username: string;
   password: string;
+  register_token?: string | null;
 }
 
 // Backend standard response: { code, data, errors, status }
@@ -107,6 +108,12 @@ async function request<T>(
   }
 }
 
+export interface PrivilegeResponse {
+  role: number;
+  username: string;
+  shop_id: string;
+}
+
 export const authApi = {
   login: (body: LoginRequest) =>
     request<LoginResponse>('/api/auth/login', {
@@ -118,6 +125,11 @@ export const authApi = {
     request<string>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(body),
+    }),
+
+  getPrivilege: (token: string) =>
+    request<PrivilegeResponse>('/api/auth/privilege', {
+      headers: createAuthHeaders(token),
     }),
 };
 
@@ -151,6 +163,7 @@ export interface CoffeeShop {
   whatsapp?: string;
   facebook?: string;
   twitter?: string;
+  register_token?: string;
 }
 
 export interface XenditApiRequest {

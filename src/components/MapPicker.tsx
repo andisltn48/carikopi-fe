@@ -32,6 +32,7 @@ export default function MapPicker({ latitude, longitude, onChange }: MapPickerPr
   const defaultZoom = latitude ? 15 : 5;
 
   useEffect(() => {
+    let isMounted = true;
     if (!containerRef.current || mapRef.current) return;
 
     const map = L.map(containerRef.current).setView([defaultLat, defaultLng], defaultZoom);
@@ -50,18 +51,25 @@ export default function MapPicker({ latitude, longitude, onChange }: MapPickerPr
       if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
+            if (!isMounted) return;
             const { latitude: userLat, longitude: userLng } = position.coords;
-            map.flyTo([userLat, userLng], 15);
             
-            // Auto-place marker at user's current location
-            if (!markerRef.current) {
-              markerRef.current = L.marker([userLat, userLng], { icon: defaultIcon }).addTo(map);
-            } else {
-              markerRef.current.setLatLng([userLat, userLng]);
-            }
-            onChange(userLat, userLng);
+            // Small delay to ensure map container is properly rendered before flyTo
+            setTimeout(() => {
+              if (!isMounted) return;
+              map.flyTo([userLat, userLng], 15);
+              
+              // Auto-place marker at user's current location
+              if (!markerRef.current) {
+                markerRef.current = L.marker([userLat, userLng], { icon: defaultIcon }).addTo(map);
+              } else {
+                markerRef.current.setLatLng([userLat, userLng]);
+              }
+              onChange(userLat, userLng);
+            }, 100);
           },
           (error) => {
+            if (!isMounted) return;
             console.error('Error getting geolocation:', error);
           },
           { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
@@ -83,9 +91,12 @@ export default function MapPicker({ latitude, longitude, onChange }: MapPickerPr
     });
 
     // Fix map size on load
-    setTimeout(() => map.invalidateSize(), 100);
+    setTimeout(() => {
+      if (isMounted) map.invalidateSize();
+    }, 100);
 
     return () => {
+      isMounted = false;
       map.remove();
       mapRef.current = null;
       markerRef.current = null;
