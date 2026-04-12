@@ -530,4 +530,22 @@ export const orderApi = {
   },
 };
 
+// ── Dashboard Types ──
+
+export interface DashboardData {
+  penjualan_hari_ini: { value: number };
+  jumlah_transaksi_hari_ini: { value: number };
+  pendapatan_bulan_ini: { value: number };
+  menu_terlaris: { name: string; total: number } | null;
+  list_menu_terlaris: { name: string; total: number }[];
+  grafik_penjualan: { label: string; value: number }[];
+}
+
+export const dashboardApi = {
+  getData: (token: string, shopId: string) =>
+    request<DashboardData>(`/api/dashboard/${shopId}`, {
+      headers: createAuthHeaders(token),
+    }),
+};
+
 export { request, API_BASE_URL };

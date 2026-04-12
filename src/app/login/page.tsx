@@ -25,7 +25,13 @@ export default function LoginPage() {
 
       if (result.success && result.data) {
         login(result.data.token, username, result.data.role);
-        router.push('/dashboard/menu');
+        
+        // Redirect based on role
+        if (result.data.role === 2) {
+          router.push('/dashboard');
+        } else {
+          router.push('/dashboard/menu');
+        }
       } else {
         setError(result.message || 'Login gagal. Periksa kembali username dan password.');
       }
